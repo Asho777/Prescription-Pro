@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useUserStore } from './store/userStore'
 import { useMedicationStore } from './store/medicationStore'
 import { Layout } from './components/Layout'
-import { Login } from './components/Login'
+import { AuthContainer } from './components/AuthContainer'
 import { Dashboard } from './pages/Dashboard'
 import { Medications } from './pages/Medications'
 import { AddMedication } from './pages/AddMedication'
@@ -41,7 +41,7 @@ function App() {
   }, [processDailyStockReduction])
 
   if (!isAuthenticated) {
-    return <Login />
+    return <AuthContainer />
   }
 
   return (

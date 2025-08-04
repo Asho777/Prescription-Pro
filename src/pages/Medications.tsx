@@ -49,18 +49,20 @@ export function Medications() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Medications</h1>
           <p className="text-gray-600">Manage your prescription medications</p>
         </div>
-        <Link
-          to="/medications/add"
-          className="btn-primary inline-flex items-center mt-4 sm:mt-0"
-        >
-          <Plus className="h-5 w-5 mr-2" />
-          Add Medication
-        </Link>
+        <div className="flex-shrink-0">
+          <Link
+            to="/medications/add"
+            className="btn-primary inline-flex items-center whitespace-nowrap"
+          >
+            <Plus className="h-5 w-5 mr-2" />
+            Add Medication
+          </Link>
+        </div>
       </div>
 
       {/* Search and Filter */}
@@ -75,12 +77,12 @@ export function Medications() {
             className="input-field pl-10"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Filter className="h-5 w-5 text-gray-400" />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="input-field w-auto"
+            className="input-field w-auto min-w-0"
           >
             <option value="all">All Medications</option>
             <option value="active">Active Only</option>
@@ -96,11 +98,13 @@ export function Medications() {
           {filteredMedications.map((medication) => (
             <div key={medication.id} className="medication-card">
               <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900">{medication.name}</h3>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-semibold text-gray-900 truncate">{medication.name}</h3>
                   <p className="text-sm text-gray-600">{medication.dosage} {medication.form}</p>
                 </div>
-                {getStatusBadge(medication)}
+                <div className="flex-shrink-0 ml-2">
+                  {getStatusBadge(medication)}
+                </div>
               </div>
 
               <div className="space-y-2 mb-4">
@@ -123,11 +127,11 @@ export function Medications() {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Doctor:</span>
-                  <span className="text-gray-900">{getDoctorName(medication.doctorId)}</span>
+                  <span className="text-gray-900 truncate ml-2">{getDoctorName(medication.doctorId)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Pharmacy:</span>
-                  <span className="text-gray-900">{getPharmacyName(medication.pharmacyId)}</span>
+                  <span className="text-gray-900 truncate ml-2">{getPharmacyName(medication.pharmacyId)}</span>
                 </div>
               </div>
 

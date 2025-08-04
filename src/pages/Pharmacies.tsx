@@ -81,19 +81,21 @@ export function Pharmacies() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Pharmacies</h1>
           <p className="text-gray-600">Manage your preferred pharmacies</p>
         </div>
         {!isAddingPharmacy && (
-          <button
-            onClick={() => setIsAddingPharmacy(true)}
-            className="btn-primary inline-flex items-center mt-4 sm:mt-0"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add Pharmacy
-          </button>
+          <div className="flex-shrink-0">
+            <button
+              onClick={() => setIsAddingPharmacy(true)}
+              className="btn-primary inline-flex items-center whitespace-nowrap"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Pharmacy
+            </button>
+          </div>
         )}
       </div>
 
@@ -217,17 +219,17 @@ export function Pharmacies() {
           {pharmacies.map((pharmacy) => (
             <div key={pharmacy.id} className="card">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
+                <div className="flex items-center min-w-0 flex-1">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-medical-100 rounded-full flex items-center justify-center">
-                      <Building2 className="h-5 w-5 text-medical-600" />
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Building2 className="h-5 w-5 text-blue-600" />
                     </div>
                   </div>
-                  <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{pharmacy.name}</h3>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">{pharmacy.name}</h3>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleEdit(pharmacy)}
                     className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
@@ -245,23 +247,23 @@ export function Pharmacies() {
 
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-600">
-                  <Phone className="h-4 w-4 mr-2" />
-                  {pharmacy.phone}
+                  <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{pharmacy.phone}</span>
                 </div>
                 {pharmacy.email && (
                   <div className="flex items-center text-sm text-gray-600">
-                    <Mail className="h-4 w-4 mr-2" />
-                    {pharmacy.email}
+                    <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">{pharmacy.email}</span>
                   </div>
                 )}
                 {pharmacy.website && (
                   <div className="flex items-center text-sm text-gray-600">
-                    <Globe className="h-4 w-4 mr-2" />
+                    <Globe className="h-4 w-4 mr-2 flex-shrink-0" />
                     <a 
                       href={pharmacy.website} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700"
+                      className="text-primary-600 hover:text-primary-700 truncate"
                     >
                       Visit Website
                     </a>
@@ -269,13 +271,13 @@ export function Pharmacies() {
                 )}
                 <div className="flex items-start text-sm text-gray-600">
                   <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>{pharmacy.address}</span>
+                  <span className="break-words">{pharmacy.address}</span>
                 </div>
               </div>
 
               {pharmacy.notes && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">{pharmacy.notes}</p>
+                  <p className="text-sm text-gray-600 break-words">{pharmacy.notes}</p>
                 </div>
               )}
 

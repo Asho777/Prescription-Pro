@@ -93,19 +93,21 @@ export function Doctors() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Doctors</h1>
           <p className="text-gray-600">Manage your healthcare providers</p>
         </div>
         {!isAddingDoctor && (
-          <button
-            onClick={() => setIsAddingDoctor(true)}
-            className="btn-primary inline-flex items-center mt-4 sm:mt-0"
-          >
-            <Plus className="h-5 w-5 mr-2" />
-            Add Doctor
-          </button>
+          <div className="flex-shrink-0">
+            <button
+              onClick={() => setIsAddingDoctor(true)}
+              className="btn-primary inline-flex items-center whitespace-nowrap"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Doctor
+            </button>
+          </div>
         )}
       </div>
 
@@ -252,18 +254,18 @@ export function Doctors() {
           {doctors.map((doctor) => (
             <div key={doctor.id} className="card">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center">
+                <div className="flex items-center min-w-0 flex-1">
                   <div className="flex-shrink-0">
                     <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
                       <Stethoscope className="h-5 w-5 text-primary-600" />
                     </div>
                   </div>
-                  <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{doctor.name}</h3>
-                    <p className="text-sm text-gray-600">{doctor.specialty}</p>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 truncate">{doctor.name}</h3>
+                    <p className="text-sm text-gray-600 truncate">{doctor.specialty}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handleEdit(doctor)}
                     className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
@@ -281,24 +283,24 @@ export function Doctors() {
 
               <div className="space-y-2">
                 <div className="flex items-center text-sm text-gray-600">
-                  <Phone className="h-4 w-4 mr-2" />
-                  {doctor.phone}
+                  <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{doctor.phone}</span>
                 </div>
                 {doctor.email && (
                   <div className="flex items-center text-sm text-gray-600">
-                    <Mail className="h-4 w-4 mr-2" />
-                    {doctor.email}
+                    <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">{doctor.email}</span>
                   </div>
                 )}
                 <div className="flex items-start text-sm text-gray-600">
                   <MapPin className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                  <span>{doctor.address}</span>
+                  <span className="break-words">{doctor.address}</span>
                 </div>
               </div>
 
               {doctor.notes && (
                 <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-sm text-gray-600">{doctor.notes}</p>
+                  <p className="text-sm text-gray-600 break-words">{doctor.notes}</p>
                 </div>
               )}
 
