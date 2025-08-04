@@ -15,6 +15,7 @@ export interface Medication {
   quantityPerFill: number
   currentQuantity: number
   cost: number
+  totalDispensingsPurchased: number
   isActive: boolean
   notes?: string
   createdAt: Date

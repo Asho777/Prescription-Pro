@@ -32,7 +32,7 @@
   }
 
   .dark .input-field {
-    @apply bg-gray-700 border-gray-600 text-white;
+    @apply bg-gray-700 border-gray-600 text-white placeholder-gray-400;
   }
 
   .dark .label {
@@ -41,6 +41,76 @@
 
   .dark .medication-card {
     @apply bg-gray-800 border-gray-700;
+  }
+
+  /* Dark theme page titles and subtitles */
+  .dark .page-title {
+    @apply text-white;
+  }
+
+  .dark .page-subtitle {
+    @apply text-gray-300;
+  }
+
+  /* Dark theme table headers */
+  .dark thead {
+    @apply bg-gray-700;
+  }
+
+  .dark thead th {
+    @apply text-gray-300;
+  }
+
+  .dark tbody {
+    @apply bg-gray-800;
+  }
+
+  .dark tbody tr {
+    @apply border-gray-700;
+  }
+
+  .dark tbody td {
+    @apply text-gray-300;
+  }
+
+  /* Dark theme select elements */
+  .dark select {
+    @apply bg-gray-700 border-gray-600 text-white;
+  }
+
+  /* Dark theme text color overrides */
+  .dark .text-gray-900 {
+    @apply text-white;
+  }
+
+  .dark .text-gray-700 {
+    @apply text-gray-300;
+  }
+
+  .dark .text-gray-600 {
+    @apply text-gray-400;
+  }
+
+  /* Dark theme border overrides */
+  .dark .border-gray-200 {
+    @apply border-gray-700;
+  }
+
+  .dark .border-gray-300 {
+    @apply border-gray-600;
+  }
+
+  /* Dark theme background overrides */
+  .dark .bg-gray-50 {
+    @apply bg-gray-700;
+  }
+
+  .dark .bg-gray-100 {
+    @apply bg-gray-700;
+  }
+
+  .dark .bg-white {
+    @apply bg-gray-800;
   }
 }
 
@@ -100,6 +170,15 @@
   .nav-link-inactive {
     @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900;
   }
+
+  /* Page title styles */
+  .page-title {
+    @apply text-2xl font-bold text-gray-900;
+  }
+
+  .page-subtitle {
+    @apply text-gray-600;
+  }
 }
 
 /* Custom scrollbar */
@@ -143,4 +222,9 @@
     @apply p-4;
   }
 }
-body.dark { background-color: #111827; color: #f9fafb; }
+
+/* Apply dark theme styles when body has dark class */
+body.dark {
+  background-color: #111827;
+  color: #f9fafb;
+}

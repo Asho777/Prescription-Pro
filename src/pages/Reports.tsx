@@ -8,7 +8,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'
 export function Reports() {
   const { medications, financialRecords, logs } = useMedicationStore()
 
-  // Calculate monthly spending data with actual medication costs
+  // Calculate monthly spending data based on prescription dates and Total Amount For This Purchase
   const last6Months = eachMonthOfInterval({
     start: subMonths(new Date(), 5),
     end: new Date()
@@ -18,12 +18,16 @@ export function Reports() {
     const monthStart = startOfMonth(month)
     const monthEnd = endOfMonth(month)
     
-    // Calculate spending based on medication costs and refills
-    const spending = medications.reduce((sum, med) => {
-      // Estimate number of refills in this month based on medication frequency and cost
-      const refillsInMonth = Math.ceil(30 / (med.quantityPerFill / med.frequency))
-      return sum + (med.cost * refillsInMonth)
-    }, 0)
+    // Calculate spending based on medications prescribed in this month
+    const spending = medications
+      .filter(med => {
+        const prescriptionDate = new Date(med.prescriptionDate)
+        return prescriptionDate >= monthStart && prescriptionDate <= monthEnd
+      })
+      .reduce((sum, med) => {
+        const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
+        return sum + totalAmountForPurchase
+      }, 0)
 
     return {
       month: format(month, 'MMM yyyy'),
@@ -56,12 +60,17 @@ export function Reports() {
   const totalMedications = medications.length
   const activeMedications = medications.filter(med => med.isActive).length
   const currentYear = new Date().getFullYear()
-  const totalYearlySpending = financialRecords
-    .filter(record => {
-      const recordDate = new Date(record.date)
-      return recordDate.getFullYear() === currentYear
+  
+  // Calculate total yearly spending based on Total Amount For This Purchase for current year
+  const totalYearlySpending = medications
+    .filter(med => {
+      const prescriptionDate = new Date(med.prescriptionDate)
+      return prescriptionDate.getFullYear() === currentYear
     })
-    .reduce((sum, record) => sum + record.amount, 0)
+    .reduce((sum, med) => {
+      const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
+      return sum + totalAmountForPurchase
+    }, 0)
 
   const averageAdherence = adherenceData.length > 0 
     ? Math.round(adherenceData.reduce((sum, med) => sum + med.adherence, 0) / adherenceData.length)
@@ -102,8 +111,8 @@ export function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600">Insights into your medication management and spending</p>
+          <h1 className="page-title">Reports & Analytics</h1>
+          <p className="page-subtitle">Insights into your medication management and spending</p>
         </div>
         <button
           onClick={exportReport}
@@ -245,7 +254,7 @@ export function Reports() {
           <div className="space-y-4">
             {medications
               .filter(med => med.cost > 0)
-              .sort((a, b) => b.cost - a.cost)
+              .sort((a, b) => (b.totalDispensingsPurchased * b.cost) - (a.totalDispensingsPurchased * a.cost))
               .slice(0, 5)
               .map((med, index) => (
                 <div key={med.id} className="flex items-center justify-between">
@@ -256,7 +265,7 @@ export function Reports() {
                       <p className="text-sm text-gray-500">{med.dosage}</p>
                     </div>
                   </div>
-                  <span className="font-medium text-gray-900">A${med.cost.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">A${(med.totalDispensingsPurchased * med.cost).toFixed(2)}</span>
                 </div>
               ))}
             {medications.filter(med => med.cost > 0).length === 0 && (
@@ -327,7 +336,7 @@ export function Reports() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">A${med.cost.toFixed(2)}</div>
+                    <div className="text-sm text-gray-900">A${(med.totalDispensingsPurchased * med.cost).toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`status-badge ${med.isActive ? 'status-active' : 'bg-gray-100 text-gray-800'}`}>

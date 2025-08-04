@@ -64,6 +64,7 @@ export const useMedicationStore = create<MedicationStore>()(
         const newMedication: Medication = {
           ...medication,
           id: generateId(),
+          totalDispensingsPurchased: medication.totalDispensingsPurchased || 0,
           createdAt: now,
           updatedAt: now,
         }

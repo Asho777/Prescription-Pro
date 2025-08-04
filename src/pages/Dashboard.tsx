@@ -14,14 +14,17 @@ import toast from 'react-hot-toast'
 export function Dashboard() {
   const { medications, financialRecords, logs, doctors } = useMedicationStore()
 
-  // Calculate yearly spending (current year)
+  // Calculate yearly spending (current year) based on Total Amount For This Purchase
   const currentYear = new Date().getFullYear()
-  const yearlySpending = financialRecords
-    .filter(record => {
-      const recordDate = new Date(record.date)
-      return recordDate.getFullYear() === currentYear
+  const yearlySpending = medications
+    .filter(med => {
+      const prescriptionDate = new Date(med.prescriptionDate)
+      return prescriptionDate.getFullYear() === currentYear
     })
-    .reduce((sum, record) => sum + record.amount, 0)
+    .reduce((sum, med) => {
+      const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
+      return sum + totalAmountForPurchase
+    }, 0)
 
   const stats: DashboardStats = {
     totalMedications: medications.length,
@@ -70,6 +73,12 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="page-title">Dashboard</h1>
+        <p className="page-subtitle">Overview of your prescription management</p>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <div className="card">

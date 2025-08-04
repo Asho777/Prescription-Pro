@@ -25,6 +25,7 @@ const medicationSchema = z.object({
   quantityPerFill: z.number().min(1, 'Quantity per fill must be at least 1'),
   currentQuantity: z.number().min(0, 'Current quantity cannot be negative'),
   cost: z.number().min(0, 'Cost cannot be negative'),
+  totalDispensingsPurchased: z.number().min(0, 'Total dispensings purchased cannot be negative'),
   isActive: z.boolean(),
   notes: z.string().optional(),
 })
@@ -74,10 +75,20 @@ export function EditMedication() {
     handleSubmit,
     formState: { errors, isSubmitting },
     setValue,
-    reset
+    reset,
+    watch
   } = useForm<MedicationFormData>({
     resolver: zodResolver(medicationSchema),
   })
+
+  const totalRepeats = watch('totalRepeats')
+  const totalDispensingsPurchased = watch('totalDispensingsPurchased')
+  const cost = watch('cost')
+
+  // Calculate derived values
+  const totalNumberOfDispensings = (totalRepeats || 0) + 1
+  const remainingDispensings = totalNumberOfDispensings - (totalDispensingsPurchased || 0)
+  const totalAmountForPurchase = (totalDispensingsPurchased || 0) * (cost || 0)
 
   useEffect(() => {
     if (medication) {
@@ -148,8 +159,8 @@ export function EditMedication() {
           <ArrowLeft className="h-4 w-4 mr-1" />
           Back to Medications
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Medication</h1>
-        <p className="text-gray-600">Update the details for {medication.name}</p>
+        <h1 className="page-title">Edit Medication</h1>
+        <p className="page-subtitle">Update the details for {medication.name}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -330,6 +341,18 @@ export function EditMedication() {
                 <p className="mt-1 text-sm text-red-600">{errors.totalRepeats.message}</p>
               )}
             </div>
+
+            <div className="sm:col-span-2">
+              <label className="label">Total Number of Dispensings</label>
+              <input
+                type="number"
+                value={totalNumberOfDispensings}
+                className="input-field bg-gray-100"
+                disabled
+                readOnly
+              />
+              <p className="mt-1 text-sm text-gray-500">Automatically calculated: Total Repeats + 1</p>
+            </div>
           </div>
         </div>
 
@@ -362,7 +385,7 @@ export function EditMedication() {
               )}
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <label className="label">Cost per Fill (A$)</label>
               <input
                 type="number"
@@ -375,6 +398,38 @@ export function EditMedication() {
               {errors.cost && (
                 <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
               )}
+            </div>
+
+            <div>
+              <label className="label">Total Dispensings Purchased</label>
+              <input
+                type="number"
+                min="0"
+                max={totalNumberOfDispensings}
+                {...register('totalDispensingsPurchased', { valueAsNumber: true })}
+                className="input-field"
+                placeholder="0"
+              />
+              {errors.totalDispensingsPurchased && (
+                <p className="mt-1 text-sm text-red-600">{errors.totalDispensingsPurchased.message}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                Remaining dispensings: {remainingDispensings}
+              </p>
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="label">Total Amount For This Purchase</label>
+              <input
+                type="text"
+                value={`A$${totalAmountForPurchase.toFixed(2)}`}
+                className="input-field bg-gray-100"
+                disabled
+                readOnly
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                Automatically calculated: Total Dispensings Purchased × Cost per Fill
+              </p>
             </div>
           </div>
         </div>

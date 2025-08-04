@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react'
+import { ReactNode, useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useUserStore } from '../store/userStore'
 import { useSettingsStore } from '../store/settingsStore'
@@ -37,6 +37,15 @@ export function Layout({ children }: LayoutProps) {
   const { settings } = useSettingsStore()
 
   const isDark = settings.theme === 'dark'
+
+  // Apply theme to body
+  useEffect(() => {
+    if (isDark) {
+      document.body.classList.add('dark')
+    } else {
+      document.body.classList.remove('dark')
+    }
+  }, [isDark])
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
