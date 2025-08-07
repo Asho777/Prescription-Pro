@@ -1,5 +1,6 @@
 import { useMedicationStore } from '../store/medicationStore'
 import { DashboardStats } from '../types'
+import { Link } from 'react-router-dom'
 import { 
   Pill, 
   AlertTriangle, 
@@ -164,7 +165,12 @@ export function Dashboard() {
               {upcomingMedications.map((medication) => (
                 <div key={medication.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{medication.name}</p>
+                    <Link 
+                      to={`/medications/edit/${medication.id}`}
+                      className="font-medium text-primary-600 hover:text-primary-700 hover:underline"
+                    >
+                      {medication.name}
+                    </Link>
                     <p className="text-sm text-gray-500">{medication.dosage} - {medication.timings.join(', ')}</p>
                   </div>
                   <span className="status-badge status-active">Active</span>

@@ -347,7 +347,7 @@ export function Doctors() {
                 className="btn-primary"
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Add Doctor
+                <span className="whitespace-nowrap">Add Doctor</span>
               </button>
             </div>
           </div>

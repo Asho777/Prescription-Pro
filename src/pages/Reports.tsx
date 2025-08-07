@@ -233,7 +233,7 @@ export function Reports() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={false}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -245,6 +245,21 @@ export function Reports() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+          
+          {/* Legend for mobile screens */}
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {formDistribution.map((entry, index) => (
+              <div key={entry.name} className="flex items-center">
+                <div 
+                  className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-sm text-gray-700 truncate">
+                  {entry.name} ({entry.value})
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -312,7 +327,12 @@ export function Reports() {
               {medications.slice(0, 10).map((med) => (
                 <tr key={med.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{med.name}</div>
+                    <Link 
+                      to={`/medications/edit/${med.id}`}
+                      className="text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline"
+                    >
+                      {med.name}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{med.dosage}</div>

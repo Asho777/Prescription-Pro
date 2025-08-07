@@ -137,7 +137,7 @@ export function Medications() {
 
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                 <span className="text-sm text-gray-500">
-                  {medication.repeatsRemaining} repeats left
+                  {medication.repeatsRemaining} of {medication.totalRepeats} repeats left
                 </span>
                 <div className="flex items-center gap-2">
                   <Link
@@ -175,7 +175,7 @@ export function Medications() {
             <div className="mt-6">
               <Link to="/medications/add" className="btn-primary">
                 <Plus className="h-5 w-5 mr-2" />
-                Add Medication
+                <span className="whitespace-nowrap">Add Medication</span>
               </Link>
             </div>
           )}

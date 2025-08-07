@@ -310,7 +310,7 @@ export function Pharmacies() {
                 className="btn-primary"
               >
                 <Plus className="h-5 w-5 mr-2" />
-                Add Pharmacy
+                <span className="whitespace-nowrap">Add Pharmacy</span>
               </button>
             </div>
           </div>
