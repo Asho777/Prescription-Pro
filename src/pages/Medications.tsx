@@ -173,7 +173,7 @@ export function Medications() {
           </p>
           {!searchTerm && filterStatus === 'all' && (
             <div className="mt-6">
-              <Link to="/medications/add" className="btn-primary">
+              <Link to="/medications/add" className="btn-primary inline-flex items-center whitespace-nowrap">
                 <Plus className="h-5 w-5 mr-2" />
                 Add Medication
               </Link>

@@ -229,7 +229,7 @@ export function Doctors() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-primary inline-flex items-center"
+                className="btn-primary inline-flex items-center whitespace-nowrap"
               >
                 {isSubmitting ? (
                   <>
@@ -309,7 +309,7 @@ export function Doctors() {
                 <div className="mt-4 pt-3 border-t border-gray-200">
                   <button
                     onClick={() => handleBookingClick(doctor)}
-                    className="w-full btn-primary inline-flex items-center justify-center"
+                    className="w-full btn-primary inline-flex items-center justify-center whitespace-nowrap"
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     Book Appointment
@@ -344,7 +344,7 @@ export function Doctors() {
             <div className="mt-6">
               <button
                 onClick={() => setIsAddingDoctor(true)}
-                className="btn-primary"
+                className="btn-primary inline-flex items-center whitespace-nowrap"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Add Doctor

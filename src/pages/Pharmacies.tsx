@@ -194,7 +194,7 @@ export function Pharmacies() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-primary inline-flex items-center"
+                className="btn-primary inline-flex items-center whitespace-nowrap"
               >
                 {isSubmitting ? (
                   <>
@@ -307,7 +307,7 @@ export function Pharmacies() {
             <div className="mt-6">
               <button
                 onClick={() => setIsAddingPharmacy(true)}
-                className="btn-primary"
+                className="btn-primary inline-flex items-center whitespace-nowrap"
               >
                 <Plus className="h-5 w-5 mr-2" />
                 Add Pharmacy
