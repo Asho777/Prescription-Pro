@@ -1,5 +1,5 @@
 import { useMedicationStore } from '../store/medicationStore'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Download, Calendar, DollarSign, TrendingUp, Activity, HelpCircle } from 'lucide-react'
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns'
 
@@ -104,26 +104,6 @@ export function Reports() {
 
   const calculateRemainingDays = (medication: any) => {
     return Math.floor(medication.currentQuantity / medication.frequency)
-  }
-
-  // Custom legend content for better mobile display
-  const renderCustomLegend = (props: any) => {
-    const { payload } = props
-    return (
-      <div className="flex flex-wrap justify-center gap-4 mt-4 px-2">
-        {payload.map((entry: any, index: number) => (
-          <div key={index} className="flex items-center text-sm">
-            <div 
-              className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
-              style={{ backgroundColor: entry.color }}
-            />
-            <span className="text-gray-700">
-              {entry.value} {((entry.payload.value / formDistribution.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(0)}%
-            </span>
-          </div>
-        ))}
-      </div>
-    )
   }
 
   return (
@@ -242,7 +222,7 @@ export function Reports() {
           </div>
         </div>
 
-        {/* Medication Form Distribution - UPDATED FOR MOBILE */}
+        {/* Medication Form Distribution */}
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Medication Forms</h3>
           <div className="h-80">
@@ -251,8 +231,10 @@ export function Reports() {
                 <Pie
                   data={formDistribution}
                   cx="50%"
-                  cy="45%" // Moved up slightly to make room for legend below
-                  outerRadius={100} // Reduced size slightly for mobile
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -261,10 +243,6 @@ export function Reports() {
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend 
-                  content={renderCustomLegend}
-                  wrapperStyle={{ paddingTop: '10px' }}
-                />
               </PieChart>
             </ResponsiveContainer>
           </div>
