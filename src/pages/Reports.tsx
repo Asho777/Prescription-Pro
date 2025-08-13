@@ -252,7 +252,7 @@ export function Reports() {
                   data={formDistribution}
                   cx="50%"
                   cy="45%" // Moved up slightly to make room for legend below
-                  outerRadius={100} // Reduced size slightly for mobile
+                  outerRadius={90} // Reduced size slightly for mobile
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -263,7 +263,7 @@ export function Reports() {
                 <Tooltip />
                 <Legend 
                   content={renderCustomLegend}
-                  wrapperStyle={{ paddingTop: '10px' }}
+                  wrapperStyle={{ paddingTop: '20px' }}
                 />
               </PieChart>
             </ResponsiveContainer>

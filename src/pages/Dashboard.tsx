@@ -1,5 +1,6 @@
 import { useMedicationStore } from '../store/medicationStore'
 import { DashboardStats } from '../types'
+import { Link } from 'react-router-dom'
 import { 
   Pill, 
   AlertTriangle, 
@@ -38,9 +39,9 @@ export function Dashboard() {
     adherenceRate: 85 // This would be calculated from logs in a real app
   }
 
-  const upcomingMedications = medications
-    .filter(med => med.isActive)
-    .slice(0, 5)
+ 	const upcomingMedications = medications
+  .filter(med => med.isActive)
+  .slice(0, 30)  // Changed from .slice(0, 5) to .slice(0, 30)
 
   const lowStockMedications = medications
     .filter(med => med.currentQuantity <= 7)
@@ -162,13 +163,17 @@ export function Dashboard() {
           {upcomingMedications.length > 0 ? (
             <div className="space-y-3">
               {upcomingMedications.map((medication) => (
-                <div key={medication.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <Link
+                  key={medication.id}
+                  to={`/medications/edit/${medication.id}`}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
                   <div>
-                    <p className="font-medium text-gray-900">{medication.name}</p>
+                    <p className="font-medium text-gray-900 hover:text-primary-600">{medication.name}</p>
                     <p className="text-sm text-gray-500">{medication.dosage} - {medication.timings.join(', ')}</p>
                   </div>
                   <span className="status-badge status-active">Active</span>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -181,33 +186,45 @@ export function Dashboard() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Alerts & Notifications</h3>
           <div className="space-y-3">
             {medicationsNeedingAppointments.map((medication) => (
-              <div key={medication.id} className="flex items-center p-3 bg-red-50 rounded-lg">
+              <Link
+                key={medication.id}
+                to={`/medications/edit/${medication.id}`}
+                className="flex items-center p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+              >
                 <Calendar className="h-5 w-5 text-red-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900">Appointment Needed: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600">Appointment Needed: {medication.name}</p>
                   <p className="text-sm text-gray-500">No repeats remaining - book doctor appointment</p>
                 </div>
-              </div>
+              </Link>
             ))}
             
             {lowStockMedications.map((medication) => (
-              <div key={medication.id} className="flex items-center p-3 bg-yellow-50 rounded-lg">
+              <Link
+                key={medication.id}
+                to={`/medications/edit/${medication.id}`}
+                className="flex items-center p-3 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors"
+              >
                 <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900">Low Stock: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600">Low Stock: {medication.name}</p>
                   <p className="text-sm text-gray-500">{medication.currentQuantity} remaining</p>
                 </div>
-              </div>
+              </Link>
             ))}
             
             {expiringMedications.map((medication) => (
-              <div key={medication.id} className="flex items-center p-3 bg-red-50 rounded-lg">
+              <Link
+                key={medication.id}
+                to={`/medications/edit/${medication.id}`}
+                className="flex items-center p-3 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+              >
                 <Calendar className="h-5 w-5 text-red-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900">Expiring: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600">Expiring: {medication.name}</p>
                   <p className="text-sm text-gray-500">Expires {format(new Date(medication.expiryDate), 'MMM dd, yyyy')}</p>
                 </div>
-              </div>
+              </Link>
             ))}
             
             {medicationsNeedingAppointments.length === 0 && lowStockMedications.length === 0 && expiringMedications.length === 0 && (
