@@ -1,4 +1,5 @@
 import { useMedicationStore } from '../store/medicationStore'
+import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Download, Calendar, DollarSign, TrendingUp, Activity, HelpCircle } from 'lucide-react'
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns'
@@ -38,7 +39,7 @@ export function Reports() {
   // Calculate medication adherence data
   const adherenceData = medications
     .filter(med => med.isActive)
-    .slice(0, 5)
+    .slice(0, 20)
     .map(med => ({
       name: med.name,
       adherence: Math.floor(Math.random() * 20) + 80 // Mock data - would be calculated from logs
@@ -277,18 +278,22 @@ export function Reports() {
             {medications
               .filter(med => med.cost > 0)
               .sort((a, b) => (b.totalDispensingsPurchased * b.cost) - (a.totalDispensingsPurchased * a.cost))
-              .slice(0, 5)
+              .slice(0, 20)
               .map((med, index) => (
-                <div key={med.id} className="flex items-center justify-between">
+                <Link
+                  key={med.id}
+                  to={`/medications/edit/${med.id}`}
+                  className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                >
                   <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full mr-3`} style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                     <div>
-                      <p className="font-medium text-gray-900">{med.name}</p>
+                      <p className="font-medium text-gray-900 hover:text-primary-600">{med.name}</p>
                       <p className="text-sm text-gray-500">{med.dosage}</p>
                     </div>
                   </div>
                   <span className="font-medium text-gray-900">A${(med.totalDispensingsPurchased * med.cost).toFixed(2)}</span>
-                </div>
+                </Link>
               ))}
             {medications.filter(med => med.cost > 0).length === 0 && (
               <p className="text-gray-500 text-center py-4">No cost data available</p>
@@ -332,9 +337,14 @@ export function Reports() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {medications.slice(0, 10).map((med) => (
-                <tr key={med.id}>
+                <tr key={med.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{med.name}</div>
+                    <Link
+                      to={`/medications/edit/${med.id}`}
+                      className="text-sm font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                    >
+                      {med.name}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{med.dosage}</div>
