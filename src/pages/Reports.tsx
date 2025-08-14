@@ -111,7 +111,7 @@ export function Reports() {
   const renderCustomLegend = (props: any) => {
     const { payload } = props
     return (
-      <div className="flex flex-wrap justify-center gap-4 mt-4 px-2">
+      <div className="flex flex-col justify-center gap-4 mt-4 px-2">
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center text-sm">
             <div 

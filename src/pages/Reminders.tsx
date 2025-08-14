@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useMedicationStore } from '../store/medicationStore'
 import { Bell, Clock, Calendar, AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react'
 import { format, addDays, isToday, isTomorrow } from 'date-fns'
+import { Link } from 'react-router-dom'
 
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
@@ -122,7 +123,12 @@ export function Reminders() {
                       <div className={`w-3 h-3 rounded-full ${reminder.taken ? 'bg-green-500' : 'bg-gray-300'}`} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{reminder.medicationName}</h3>
+                      <Link 
+  												to={`/medications/edit/${reminder.medicationId}`}
+  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+											>
+  												{reminder.medicationName}
+											</Link>
                       <p className="text-sm text-gray-500">{reminder.dosage} - {reminder.timing}</p>
                       <p className="text-xs text-gray-400">Current stock: {reminder.currentQuantity}</p>
                     </div>
@@ -174,7 +180,12 @@ export function Reminders() {
                       }`} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-medium text-gray-900">{medication.name}</h3>
+                      <Link 
+  												to={`/medications/edit/${medication.id}`}
+  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+											>
+  												{medication.name}
+											</Link>
                       <p className="text-sm text-gray-500">
                         {medication.currentQuantity} remaining • {medication.dosage}
                       </p>

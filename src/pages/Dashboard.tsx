@@ -193,7 +193,7 @@ export function Dashboard() {
               >
                 <Calendar className="h-5 w-5 text-red-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900 hover:text-primary-600">Appointment Needed: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600 dark:!text-black">Appointment Needed: {medication.name}</p>
                   <p className="text-sm text-gray-500">No repeats remaining - book doctor appointment</p>
                 </div>
               </Link>
@@ -207,7 +207,7 @@ export function Dashboard() {
               >
                 <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900 hover:text-primary-600">Low Stock: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600 dark:!text-black">Low Stock: {medication.name}</p>
                   <p className="text-sm text-gray-500">{medication.currentQuantity} remaining</p>
                 </div>
               </Link>
@@ -221,7 +221,7 @@ export function Dashboard() {
               >
                 <Calendar className="h-5 w-5 text-red-600 mr-3" />
                 <div>
-                  <p className="font-medium text-gray-900 hover:text-primary-600">Expiring: {medication.name}</p>
+                  <p className="font-medium text-gray-900 hover:text-primary-600 dark:!text-black">Expiring: {medication.name}</p>
                   <p className="text-sm text-gray-500">Expires {format(new Date(medication.expiryDate), 'MMM dd, yyyy')}</p>
                 </div>
               </Link>

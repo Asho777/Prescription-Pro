@@ -153,12 +153,12 @@ export function EditMedication() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <button
-          onClick={() => navigate('/medications')}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Medications
-        </button>
+  				onClick={() => navigate(-1)}
+  				className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+					>
+  				<ArrowLeft className="h-4 w-4 mr-1" />
+  				Back
+					</button>
         <h1 className="page-title">Edit Medication</h1>
         <p className="page-subtitle">Update the details for {medication.name}</p>
       </div>
@@ -317,7 +317,7 @@ export function EditMedication() {
             </div>
 
             <div>
-              <label className="label">Repeats Remaining *</label>
+              <label className="label">Repeats Remaining as per the last Repeat Authorisation *</label>
               <input
                 type="number"
                 min="0"
@@ -330,7 +330,7 @@ export function EditMedication() {
             </div>
 
             <div>
-              <label className="label">Total Repeats *</label>
+              <label className="label">Total Repeats as per the Doctors Script *</label>
               <input
                 type="number"
                 min="0"
@@ -414,8 +414,8 @@ export function EditMedication() {
                 <p className="mt-1 text-sm text-red-600">{errors.totalDispensingsPurchased.message}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                Remaining dispensings: {remainingDispensings}
-              </p>
+  							Remaining dispensings: {watch('repeatsRemaining') || 0}
+							</p>
             </div>
 
             <div className="sm:col-span-2">
@@ -456,12 +456,12 @@ export function EditMedication() {
 
         <div className="flex items-center justify-end gap-4">
           <button
-            type="button"
-            onClick={() => navigate('/medications')}
-            className="btn-secondary"
-          >
-            Cancel
-          </button>
+  						type="button"
+  						onClick={() => navigate(-1)}
+  						className="btn-secondary"
+							>
+  						Cancel
+					</button>
           <button
             type="submit"
             disabled={isSubmitting}
