@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMedicationStore } from '../store/medicationStore'
 import { MedicationForm } from '../types'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Edit3, Check, X, Calculator } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 
@@ -84,8 +84,12 @@ export function EditMedication() {
   const { id } = useParams<{ id: string }>()
   const { getMedication, updateMedication, doctors, pharmacies } = useMedicationStore()
   const [selectedTimings, setSelectedTimings] = useState<string[]>([])
-  // FIXED: Simplified state management
   const [baseYearlyTotal, setBaseYearlyTotal] = useState<number>(0)
+  
+  // New state for yearly total editing
+  const [isEditingYearlyTotal, setIsEditingYearlyTotal] = useState(false)
+  const [manualYearlyTotal, setManualYearlyTotal] = useState<string>('')
+  const [useManualYearlyTotal, setUseManualYearlyTotal] = useState(false)
   
   const medication = id ? getMedication(id) : null
 
@@ -109,8 +113,11 @@ export function EditMedication() {
   const remainingDispensings = totalNumberOfDispensings - (totalDispensingsPurchased || 0)
   const totalAmountForPurchase = (totalDispensingsPurchased || 0) * (cost || 0)
 
-  // FIXED: Don't add current purchase to base - the onSubmit will handle the final total
-  const displayYearlyTotal = baseYearlyTotal
+  // Calculate the yearly total to display
+  const calculatedYearlyTotal = baseYearlyTotal + totalAmountForPurchase
+  const displayYearlyTotal = useManualYearlyTotal 
+    ? parseFloat(manualYearlyTotal) || 0 
+    : calculatedYearlyTotal
 
   useEffect(() => {
     if (medication) {
@@ -124,9 +131,9 @@ export function EditMedication() {
       reset(formData)
       setSelectedTimings(medication.timings)
       
-      // FIXED: Simply use the stored yearly total as the base
       const yearlyTotal = getCurrentYearlyTotal(medication)
       setBaseYearlyTotal(yearlyTotal)
+      setManualYearlyTotal(yearlyTotal.toString())
     }
   }, [medication, reset])
 
@@ -141,20 +148,50 @@ export function EditMedication() {
     setValue('timings', newTimings)
   }
 
+  const handleEditYearlyTotal = () => {
+    setIsEditingYearlyTotal(true)
+    setManualYearlyTotal(displayYearlyTotal.toString())
+  }
+
+  const handleSaveYearlyTotal = () => {
+    const value = parseFloat(manualYearlyTotal)
+    if (isNaN(value) || value < 0) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+    setUseManualYearlyTotal(true)
+    setIsEditingYearlyTotal(false)
+    toast.success('Yearly total updated')
+  }
+
+  const handleCancelYearlyTotal = () => {
+    setIsEditingYearlyTotal(false)
+    setManualYearlyTotal(displayYearlyTotal.toString())
+  }
+
+  const handleUseCalculatedTotal = () => {
+    setUseManualYearlyTotal(false)
+    setManualYearlyTotal(calculatedYearlyTotal.toString())
+    setIsEditingYearlyTotal(false)
+    toast.success('Switched to calculated total')
+  }
+
   const onSubmit = async (data: MedicationFormData) => {
     if (!id) return
 
     try {
       const currentYear = new Date().getFullYear()
 
-      // FIXED: Add current purchase to the existing yearly total
-      const finalYearlyTotal = baseYearlyTotal + totalAmountForPurchase
+      // Use manual total if set, otherwise use calculated total
+      const finalYearlyTotal = useManualYearlyTotal 
+        ? parseFloat(manualYearlyTotal) || 0
+        : calculatedYearlyTotal
 
       updateMedication(id, {
         ...data,
         prescriptionDate: new Date(data.prescriptionDate),
         expiryDate: new Date(data.expiryDate),
-        yearlyTotalCost: finalYearlyTotal, // Use the calculated total
+        yearlyTotalCost: finalYearlyTotal,
         lastYearlyResetDate: new Date(currentYear, 0, 1).toISOString(),
       })
       
@@ -199,7 +236,7 @@ export function EditMedication() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Basic Information Section - Same as before */}
+        {/* Basic Information Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -290,7 +327,7 @@ export function EditMedication() {
           </div>
         </div>
 
-        {/* Healthcare Providers Section - Same as before */}
+        {/* Healthcare Providers Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Healthcare Providers</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -326,7 +363,7 @@ export function EditMedication() {
           </div>
         </div>
 
-        {/* Prescription Details Section - Same as before */}
+        {/* Prescription Details Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Prescription Details</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -394,7 +431,7 @@ export function EditMedication() {
           </div>
         </div>
 
-        {/* FIXED: Quantity & Cost Section */}
+        {/* Quantity & Cost Section - Updated */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quantity & Cost</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -476,27 +513,111 @@ export function EditMedication() {
               </p>
             </div>
 
-            {/* FIXED: Yearly total display with proper formatting */}
+            {/* Updated Yearly total section with editing capability */}
             <div className="sm:col-span-2">
-              <label className="label">Total Amount For This Medication In This Year</label>
-              <input
-                type="text"
-                value={`$${(displayYearlyTotal + totalAmountForPurchase).toFixed(2)}`}
-                className="input-field bg-blue-50 border-blue-200"
-                disabled
-                readOnly
-              />
-              <p className="mt-1 text-sm text-blue-600">
-                Current yearly total: ${displayYearlyTotal.toFixed(2)} + This purchase: ${totalAmountForPurchase.toFixed(2)}
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                When you save, this purchase will be added to your yearly total. Resets to $0.00 on January 1st each year.
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <label className="label mb-0">Total Amount For This Medication In This Year</label>
+                <div className="flex items-center gap-2">
+                  {!useManualYearlyTotal && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      <Calculator className="h-3 w-3 mr-1" />
+                      Auto-calculated
+                    </span>
+                  )}
+                  {useManualYearlyTotal && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                      <Edit3 className="h-3 w-3 mr-1" />
+                      Manual
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="relative">
+                {isEditingYearlyTotal ? (
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-700 sm:text-sm">$</span>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={manualYearlyTotal}
+                        onChange={(e) => setManualYearlyTotal(e.target.value)}
+                        className="input-field pl-7"
+                        placeholder="0.00"
+                        autoFocus
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveYearlyTotal}
+                      className="flex items-center justify-center w-10 h-10 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-md transition-colors"
+                      title="Save manual total"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCancelYearlyTotal}
+                      className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      title="Cancel editing"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={`$${displayYearlyTotal.toFixed(2)}`}
+                      className={`input-field flex-1 ${useManualYearlyTotal ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}
+                      disabled
+                      readOnly
+                    />
+                    <button
+                      type="button"
+                      onClick={handleEditYearlyTotal}
+                      className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      title="Edit yearly total manually"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    {useManualYearlyTotal && (
+                      <button
+                        type="button"
+                        onClick={handleUseCalculatedTotal}
+                        className="flex items-center justify-center w-10 h-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
+                        title="Switch back to calculated total"
+                      >
+                        <Calculator className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-2 space-y-1">
+                {useManualYearlyTotal ? (
+                  <p className="text-sm text-blue-600">
+                    Using manual total: ${displayYearlyTotal.toFixed(2)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-green-600">
+                    Previous total: ${baseYearlyTotal.toFixed(2)} + This purchase: ${totalAmountForPurchase.toFixed(2)}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500">
+                  Resets to $0.00 on January 1st each year. Click the edit icon to manually adjust if needed.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Status & Notes Section - Same as before */}
+        {/* Status & Notes Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Status & Notes</h2>
           <div className="mb-6">

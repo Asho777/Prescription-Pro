@@ -5,7 +5,7 @@ import { format, addDays, isToday, isTomorrow } from 'date-fns'
 import { Link } from 'react-router-dom'
 
 export function Reminders() {
-  const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
+  const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
 
   const today = new Date().toISOString().split('T')[0]
@@ -48,8 +48,17 @@ export function Reminders() {
     })
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
-  const handleMarkAsTaken = (medicationId: string, timing: string) => {
-    markMedicationTaken(medicationId, timing, today)
+  const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
+    const takenTimings = getDailyMedicationStatus(medicationId, today)
+    const isTaken = takenTimings.includes(timing)
+    
+    if (isTaken) {
+      // Undo the taken status and add back to inventory
+      unmarkMedicationTaken(medicationId, timing, today)
+    } else {
+      // Mark as taken and remove from inventory
+      markMedicationTaken(medicationId, timing, today)
+    }
   }
 
   const getDateLabel = (date: Date) => {
@@ -139,15 +148,14 @@ export function Reminders() {
                       {reminder.timing}
                     </span>
                     <button
-                      onClick={() => handleMarkAsTaken(reminder.medicationId, reminder.timing)}
+                      onClick={() => handleToggleMedicationTaken(reminder.medicationId, reminder.timing)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         reminder.taken
-                          ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
                           : 'bg-primary-600 text-white hover:bg-primary-700'
                       }`}
-                      disabled={reminder.taken}
                     >
-                      {reminder.taken ? 'Taken' : 'Mark as Taken'}
+                      {reminder.taken ? 'Undo' : 'Mark as Taken'}
                     </button>
                   </div>
                 </div>
@@ -281,7 +289,7 @@ export function Reminders() {
                 <select className="input-field w-auto">
                   <option value="0">At scheduled time</option>
                   <option value="5">5 minutes before</option>
-                  <option value="15" selected>15 minutes before</option>
+                  <option value="15" defaultValue="15">15 minutes before</option>
                   <option value="30">30 minutes before</option>
                   <option value="60">1 hour before</option>
                 </select>
@@ -292,7 +300,7 @@ export function Reminders() {
                 <select className="input-field w-auto">
                   <option value="3">3 days before running out</option>
                   <option value="5">5 days before running out</option>
-                  <option value="7" selected>7 days before running out</option>
+                  <option value="7" defaultValue="7">7 days before running out</option>
                   <option value="14">14 days before running out</option>
                 </select>
               </div>

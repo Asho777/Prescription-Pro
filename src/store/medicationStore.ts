@@ -39,8 +39,9 @@ interface MedicationStore {
   addFinancialRecord: (record: Omit<FinancialRecord, 'id'>) => void
   
   // Daily medication tracking
-  markMedicationTaken: (medicationId: string, timing: string, date: string) => void
-  getDailyMedicationStatus: (medicationId: string, date: string) => string[]
+	markMedicationTaken: (medicationId: string, timing: string, date: string) => void
+	unmarkMedicationTaken: (medicationId: string, timing: string, date: string) => void  // ← ADD THIS LINE
+	getDailyMedicationStatus: (medicationId: string, date: string) => string[]
   
   // Auto-reduce stock daily
   processDailyStockReduction: () => void
@@ -231,7 +232,46 @@ export const useMedicationStore = create<MedicationStore>()(
           })
         }
       },
-      
+		   
+      // ← ADD THE NEW FUNCTION HERE ←
+      unmarkMedicationTaken: (medicationId, timing, date) => {
+        const state = get()
+        const existingRecord = state.dailyMedicationTaken.find(
+          record => record.medicationId === medicationId && record.date === date
+        )
+        
+        if (existingRecord) {
+          // Remove the timing from the taken list
+          const updatedTimings = existingRecord.timingsTaken.filter(t => t !== timing)
+          
+          if (updatedTimings.length > 0) {
+            // Update the record with remaining timings
+            set((state) => ({
+              dailyMedicationTaken: state.dailyMedicationTaken.map(record =>
+                record.id === existingRecord.id
+                  ? { ...record, timingsTaken: updatedTimings }
+                  : record
+              )
+            }))
+          } else {
+            // Remove the entire record if no timings left
+            set((state) => ({
+              dailyMedicationTaken: state.dailyMedicationTaken.filter(
+                record => record.id !== existingRecord.id
+              )
+            }))
+          }
+          
+          // Restore medication stock
+          const medication = state.medications.find(med => med.id === medicationId)
+          if (medication) {
+            get().updateMedication(medicationId, {
+              currentQuantity: medication.currentQuantity + 1
+            })
+          }
+        }
+      },
+               
       getDailyMedicationStatus: (medicationId, date) => {
         const record = get().dailyMedicationTaken.find(
           record => record.medicationId === medicationId && record.date === date
