@@ -84,9 +84,9 @@ export function EditMedication() {
   const { id } = useParams<{ id: string }>()
   const { getMedication, updateMedication, doctors, pharmacies } = useMedicationStore()
   const [selectedTimings, setSelectedTimings] = useState<string[]>([])
-	const [currentYearlyTotal, setCurrentYearlyTotal] = useState<number>(0)
-	const [previousPurchaseAmount, setPreviousPurchaseAmount] = useState<number>(0)
-	
+  // FIXED: Simplified state management
+  const [baseYearlyTotal, setBaseYearlyTotal] = useState<number>(0)
+  
   const medication = id ? getMedication(id) : null
 
   const {
@@ -109,38 +109,27 @@ export function EditMedication() {
   const remainingDispensings = totalNumberOfDispensings - (totalDispensingsPurchased || 0)
   const totalAmountForPurchase = (totalDispensingsPurchased || 0) * (cost || 0)
 
-  useEffect(() => {
-  if (medication) {
-    const formData = {
-      ...medication,
-      prescriptionDate: format(new Date(medication.prescriptionDate), 'yyyy-MM-dd'),
-      expiryDate: format(new Date(medication.expiryDate), 'yyyy-MM-dd'),
-      yearlyTotalCost: medication.yearlyTotalCost || 0,
-      lastYearlyResetDate: medication.lastYearlyResetDate || new Date().toISOString(),
-    }
-    reset(formData)
-    setSelectedTimings(medication.timings)
-    
-    // Set the current yearly total (with reset logic)
-    const yearlyTotal = getCurrentYearlyTotal(medication)
-    setCurrentYearlyTotal(yearlyTotal)
-    
-    // Track the current purchase amount as previous
-    const currentPurchaseAmount = (medication.totalDispensingsPurchased || 0) * (medication.cost || 0)
-    setPreviousPurchaseAmount(currentPurchaseAmount)
-  }
-}, [medication, reset])
+  // FIXED: Don't add current purchase to base - the onSubmit will handle the final total
+  const displayYearlyTotal = baseYearlyTotal
 
-// Update yearly total when purchase amounts change
-useEffect(() => {
-  if (medication && totalAmountForPurchase !== undefined) {
-    const currentYearlyBase = getCurrentYearlyTotal(medication)
-    const newPurchaseAmount = totalAmountForPurchase - previousPurchaseAmount
-    const updatedTotal = currentYearlyBase + Math.max(0, newPurchaseAmount)
-    setCurrentYearlyTotal(updatedTotal)
-  }
-}, [totalAmountForPurchase, medication, previousPurchaseAmount])
-	
+  useEffect(() => {
+    if (medication) {
+      const formData = {
+        ...medication,
+        prescriptionDate: format(new Date(medication.prescriptionDate), 'yyyy-MM-dd'),
+        expiryDate: format(new Date(medication.expiryDate), 'yyyy-MM-dd'),
+        yearlyTotalCost: medication.yearlyTotalCost || 0,
+        lastYearlyResetDate: medication.lastYearlyResetDate || new Date().toISOString(),
+      }
+      reset(formData)
+      setSelectedTimings(medication.timings)
+      
+      // FIXED: Simply use the stored yearly total as the base
+      const yearlyTotal = getCurrentYearlyTotal(medication)
+      setBaseYearlyTotal(yearlyTotal)
+    }
+  }, [medication, reset])
+
   const handleTimingChange = (timing: string, checked: boolean) => {
     let newTimings: string[]
     if (checked) {
@@ -153,25 +142,28 @@ useEffect(() => {
   }
 
   const onSubmit = async (data: MedicationFormData) => {
-  if (!id) return
+    if (!id) return
 
-  try {
-    const currentYear = new Date().getFullYear()
+    try {
+      const currentYear = new Date().getFullYear()
 
-    updateMedication(id, {
-      ...data,
-      prescriptionDate: new Date(data.prescriptionDate),
-      expiryDate: new Date(data.expiryDate),
-      yearlyTotalCost: currentYearlyTotal,
-      lastYearlyResetDate: new Date(currentYear, 0, 1).toISOString(),
-    })
-    
-    toast.success('Medication updated successfully!')
-    navigate('/medications')
-  } catch (error) {
-    toast.error('Failed to update medication. Please try again.')
+      // FIXED: Add current purchase to the existing yearly total
+      const finalYearlyTotal = baseYearlyTotal + totalAmountForPurchase
+
+      updateMedication(id, {
+        ...data,
+        prescriptionDate: new Date(data.prescriptionDate),
+        expiryDate: new Date(data.expiryDate),
+        yearlyTotalCost: finalYearlyTotal, // Use the calculated total
+        lastYearlyResetDate: new Date(currentYear, 0, 1).toISOString(),
+      })
+      
+      toast.success('Medication updated successfully!')
+      navigate('/medications')
+    } catch (error) {
+      toast.error('Failed to update medication. Please try again.')
+    }
   }
-}
 
   if (!medication) {
     return (
@@ -196,17 +188,18 @@ useEffect(() => {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <button
-  				onClick={() => navigate(-1)}
-  				className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
-					>
-  				<ArrowLeft className="h-4 w-4 mr-1" />
-  				Back
-					</button>
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </button>
         <h1 className="page-title">Edit Medication</h1>
         <p className="page-subtitle">Update the details for {medication.name}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        {/* Basic Information Section - Same as before */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -297,6 +290,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* Healthcare Providers Section - Same as before */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Healthcare Providers</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -332,6 +326,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* Prescription Details Section - Same as before */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Prescription Details</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -399,6 +394,7 @@ useEffect(() => {
           </div>
         </div>
 
+        {/* FIXED: Quantity & Cost Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quantity & Cost</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -429,15 +425,20 @@ useEffect(() => {
             </div>
 
             <div>
-              <label className="label">Cost per Fill (A$)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                {...register('cost', { valueAsNumber: true })}
-                className="input-field"
-                placeholder="0.00"
-              />
+              <label className="label">Cost per Fill ($)</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-700 sm:text-sm">$</span>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  {...register('cost', { valueAsNumber: true })}
+                  className="input-field pl-7"
+                  placeholder="0.00"
+                />
+              </div>
               {errors.cost && (
                 <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
               )}
@@ -457,15 +458,15 @@ useEffect(() => {
                 <p className="mt-1 text-sm text-red-600">{errors.totalDispensingsPurchased.message}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-  							Remaining dispensings: {watch('repeatsRemaining') || 0}
-							</p>
+                Remaining dispensings: {watch('repeatsRemaining') || 0}
+              </p>
             </div>
 
             <div className="sm:col-span-2">
               <label className="label">Total Amount For This Purchase</label>
               <input
                 type="text"
-                value={`A$${totalAmountForPurchase.toFixed(2)}`}
+                value={`$${totalAmountForPurchase.toFixed(2)}`}
                 className="input-field bg-gray-100"
                 disabled
                 readOnly
@@ -475,22 +476,27 @@ useEffect(() => {
               </p>
             </div>
 
-           <div className="sm:col-span-2">
-  <label className="label">Total Amount For This Medication In This Year</label>
-  <input
-    type="text"
-    value={`A$${currentYearlyTotal.toFixed(2)}`}
-    className="input-field bg-blue-50 border-blue-200"
-    disabled
-    readOnly
-  />
-  <p className="mt-1 text-sm text-blue-600">
-    Automatically calculated yearly total. Resets to $0.00 on January 1st each year.
-  </p>
-</div>
+            {/* FIXED: Yearly total display with proper formatting */}
+            <div className="sm:col-span-2">
+              <label className="label">Total Amount For This Medication In This Year</label>
+              <input
+                type="text"
+                value={`$${(displayYearlyTotal + totalAmountForPurchase).toFixed(2)}`}
+                className="input-field bg-blue-50 border-blue-200"
+                disabled
+                readOnly
+              />
+              <p className="mt-1 text-sm text-blue-600">
+                Current yearly total: ${displayYearlyTotal.toFixed(2)} + This purchase: ${totalAmountForPurchase.toFixed(2)}
+              </p>
+              <p className="mt-1 text-sm text-gray-500">
+                When you save, this purchase will be added to your yearly total. Resets to $0.00 on January 1st each year.
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* Status & Notes Section - Same as before */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Status & Notes</h2>
           <div className="mb-6">
@@ -513,12 +519,12 @@ useEffect(() => {
 
         <div className="flex items-center justify-end gap-4">
           <button
-  						type="button"
-  						onClick={() => navigate(-1)}
-  						className="btn-secondary"
-							>
-  						Cancel
-					</button>
+            type="button"
+            onClick={() => navigate(-1)}
+            className="btn-secondary"
+          >
+            Cancel
+          </button>
           <button
             type="submit"
             disabled={isSubmitting}

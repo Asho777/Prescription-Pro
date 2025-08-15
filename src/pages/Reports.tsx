@@ -6,6 +6,21 @@ import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
+// Helper function to get current year total with reset logic
+const getCurrentYearlyTotal = (medication: any) => {
+  const currentYear = new Date().getFullYear()
+  const lastResetYear = medication.lastYearlyResetDate 
+    ? new Date(medication.lastYearlyResetDate).getFullYear()
+    : currentYear - 1
+
+  // If we're in a new year, return 0
+  if (currentYear > lastResetYear) {
+    return 0
+  }
+  
+  return medication.yearlyTotalCost || 0
+}
+
 export function Reports() {
   const { medications, financialRecords, logs } = useMedicationStore()
 
@@ -62,16 +77,10 @@ export function Reports() {
   const activeMedications = medications.filter(med => med.isActive).length
   const currentYear = new Date().getFullYear()
   
-  // Calculate total yearly spending based on Total Amount For This Purchase for current year
-  const totalYearlySpending = medications
-    .filter(med => {
-      const prescriptionDate = new Date(med.prescriptionDate)
-      return prescriptionDate.getFullYear() === currentYear
-    })
-    .reduce((sum, med) => {
-      const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
-      return sum + totalAmountForPurchase
-    }, 0)
+  // Calculate total yearly spending based on yearlyTotalCost for all medications
+  const totalYearlySpending = medications.reduce((sum, med) => {
+    return sum + getCurrentYearlyTotal(med)
+  }, 0)
 
   const averageAdherence = adherenceData.length > 0 
     ? Math.round(adherenceData.reduce((sum, med) => sum + med.adherence, 0) / adherenceData.length)
@@ -177,7 +186,7 @@ export function Reports() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">{currentYear} Spending</p>
-              <p className="text-2xl font-bold text-gray-900">A${totalYearlySpending.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">${totalYearlySpending.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -206,7 +215,7 @@ export function Reports() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`A$${value}`, 'Spending']} />
+                <Tooltip formatter={(value) => [`$${value}`, 'Spending']} />
                 <Line 
                   type="monotone" 
                   dataKey="spending" 
@@ -271,13 +280,13 @@ export function Reports() {
           </div>
         </div>
 
-        {/* Cost Breakdown */}
+        {/* Cost Breakdown - Updated to show yearly costs */}
         <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Medication Costs</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Yearly Medication Costs</h3>
           <div className="space-y-4">
             {medications
-              .filter(med => med.cost > 0)
-              .sort((a, b) => (b.totalDispensingsPurchased * b.cost) - (a.totalDispensingsPurchased * a.cost))
+              .filter(med => getCurrentYearlyTotal(med) > 0)
+              .sort((a, b) => getCurrentYearlyTotal(b) - getCurrentYearlyTotal(a))
               .slice(0, 20)
               .map((med, index) => (
                 <Link
@@ -292,11 +301,11 @@ export function Reports() {
                       <p className="text-sm text-gray-500">{med.dosage}</p>
                     </div>
                   </div>
-                  <span className="font-medium text-gray-900">A${(med.totalDispensingsPurchased * med.cost).toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">${getCurrentYearlyTotal(med).toFixed(2)}</span>
                 </Link>
               ))}
-            {medications.filter(med => med.cost > 0).length === 0 && (
-              <p className="text-gray-500 text-center py-4">No cost data available</p>
+            {medications.filter(med => getCurrentYearlyTotal(med) > 0).length === 0 && (
+              <p className="text-gray-500 text-center py-4">No yearly cost data available</p>
             )}
           </div>
         </div>
@@ -328,7 +337,7 @@ export function Reports() {
                   Repeats
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cost
+                  Yearly Cost
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -368,7 +377,7 @@ export function Reports() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">A${(med.totalDispensingsPurchased * med.cost).toFixed(2)}</div>
+                    <div className="text-sm text-gray-900">${getCurrentYearlyTotal(med).toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`status-badge ${med.isActive ? 'status-active' : 'bg-gray-100 text-gray-800'}`}>
