@@ -127,6 +127,7 @@ export function EditMedication() {
         expiryDate: format(new Date(medication.expiryDate), 'yyyy-MM-dd'),
         yearlyTotalCost: medication.yearlyTotalCost || 0,
         lastYearlyResetDate: medication.lastYearlyResetDate || new Date().toISOString(),
+        cost: 0, // Always start with cost at 0
       }
       reset(formData)
       setSelectedTimings(medication.timings)
@@ -193,7 +194,11 @@ export function EditMedication() {
         expiryDate: new Date(data.expiryDate),
         yearlyTotalCost: finalYearlyTotal,
         lastYearlyResetDate: new Date(currentYear, 0, 1).toISOString(),
+        cost: 0, // Reset cost to 0 after saving
       })
+      
+      // Reset the cost field in the form to 0 after successful save
+      setValue('cost', 0)
       
       toast.success('Medication updated successfully!')
       navigate('/medications')
@@ -431,7 +436,7 @@ export function EditMedication() {
           </div>
         </div>
 
-        {/* Quantity & Cost Section - Updated */}
+        {/* Quantity & Cost Section */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quantity & Cost</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -479,6 +484,9 @@ export function EditMedication() {
               {errors.cost && (
                 <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                This field resets to $0.00 after saving to prevent accidental cost increases.
+              </p>
             </div>
 
             <div>
