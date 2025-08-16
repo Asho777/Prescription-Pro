@@ -485,7 +485,7 @@ export function EditMedication() {
                 <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>
               )}
               <p className="mt-1 text-xs text-gray-500">
-                This field resets to $0.00 after saving to prevent accidental cost increases.
+                This field resets to $0.00 after Saving Changes.
               </p>
             </div>
 
