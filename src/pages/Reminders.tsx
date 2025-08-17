@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMedicationStore } from '../store/medicationStore'
 import { Bell, Clock, Calendar, AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react'
 import { format, addDays, isToday, isTomorrow } from 'date-fns'
@@ -7,8 +7,55 @@ import { Link } from 'react-router-dom'
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
+  const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0])
 
-  const today = new Date().toISOString().split('T')[0]
+  // Effect to handle midnight reset
+  useEffect(() => {
+    const checkForMidnight = () => {
+      const now = new Date()
+      const today = now.toISOString().split('T')[0]
+      
+      // If the date has changed, update our current date state
+      if (today !== currentDate) {
+        setCurrentDate(today)
+        // Force a re-render by updating the state
+        // This will cause all medication statuses to be recalculated
+        // based on the new date, effectively resetting the "taken" states
+      }
+    }
+
+    // Check immediately
+    checkForMidnight()
+
+    // Set up interval to check every minute for date changes
+    const interval = setInterval(checkForMidnight, 60000) // Check every minute
+
+    // Also set up a timeout to check at exactly midnight
+    const now = new Date()
+    const tomorrow = new Date(now)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setHours(0, 0, 1, 0) // 1 second after midnight
+    
+    const msUntilMidnight = tomorrow.getTime() - now.getTime()
+    
+    const midnightTimeout = setTimeout(() => {
+      checkForMidnight()
+      
+      // Set up daily interval starting from midnight
+      const dailyInterval = setInterval(checkForMidnight, 24 * 60 * 60 * 1000) // Every 24 hours
+      
+      return () => clearInterval(dailyInterval)
+    }, msUntilMidnight)
+
+    // Cleanup function
+    return () => {
+      clearInterval(interval)
+      clearTimeout(midnightTimeout)
+    }
+  }, [currentDate])
+
+  // Use currentDate instead of generating today each time
+  const today = currentDate
 
   // Generate today's medication reminders
   const todaysMedications = medications
