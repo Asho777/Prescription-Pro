@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
-  const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [refreshKey, setRefreshKey] = useState(0) // Force re-render key
 
   // Effect to handle midnight reset
   useEffect(() => {
@@ -15,15 +15,13 @@ export function Reminders() {
     const interval = setInterval(() => {
       const now = new Date()
       const today = now.toISOString().split('T')[0]
+      const storedDate = localStorage.getItem('lastCheckedDate') || today
       
-      // Use callback form of setState to get the current state value
-      setCurrentDate(prevDate => {
-        if (today !== prevDate) {
-          console.log('Date changed from', prevDate, 'to', today) // Debug log
-          return today
-        }
-        return prevDate
-      })
+      if (today !== storedDate) {
+        console.log('Date changed from', storedDate, 'to', today) // Debug log
+        localStorage.setItem('lastCheckedDate', today)
+        setRefreshKey(prev => prev + 1) // Force component re-render
+      }
     }, 60000) // Check every minute
 
     // Also set up a timeout to check at exactly midnight
@@ -40,8 +38,15 @@ export function Reminders() {
       const nowAtMidnight = new Date()
       const todayAtMidnight = nowAtMidnight.toISOString().split('T')[0]
       console.log('Midnight timeout triggered, setting date to', todayAtMidnight) // Debug log
-      setCurrentDate(todayAtMidnight)
+      localStorage.setItem('lastCheckedDate', todayAtMidnight)
+      setRefreshKey(prev => prev + 1) // Force component re-render
     }, msUntilMidnight)
+
+    // Initialize stored date if not exists
+    const today = new Date().toISOString().split('T')[0]
+    if (!localStorage.getItem('lastCheckedDate')) {
+      localStorage.setItem('lastCheckedDate', today)
+    }
 
     // Cleanup function
     return () => {
@@ -51,8 +56,8 @@ export function Reminders() {
     }
   }, []) // Empty dependency array to run only once
 
-  // Use currentDate instead of generating today each time
-  const today = currentDate
+  // Use current date instead of state-managed date
+  const today = new Date().toISOString().split('T')[0]
 
   // Generate today's medication reminders
   const todaysMedications = medications
