@@ -11,30 +11,19 @@ export function Reminders() {
 
   // Effect to handle midnight reset
   useEffect(() => {
-    const checkForMidnight = () => {
-      const now = new Date()
-      const today = now.toISOString().split('T')[0]
-      
-      // If the date has changed, update our current date state
-      if (today !== currentDate) {
-        setCurrentDate(today)
-        // Force a re-render by updating the state
-        // This will cause all medication statuses to be recalculated
-        // based on the new date, effectively resetting the "taken" states
-      }
-    }
-
-    // Check immediately
-    checkForMidnight()
-
     // Set up interval to check every minute for date changes
     const interval = setInterval(() => {
       const now = new Date()
       const today = now.toISOString().split('T')[0]
       
-      if (today !== currentDate) {
-        setCurrentDate(today)
-      }
+      // Use callback form of setState to get the current state value
+      setCurrentDate(prevDate => {
+        if (today !== prevDate) {
+          console.log('Date changed from', prevDate, 'to', today) // Debug log
+          return today
+        }
+        return prevDate
+      })
     }, 60000) // Check every minute
 
     // Also set up a timeout to check at exactly midnight
@@ -45,14 +34,18 @@ export function Reminders() {
     
     const msUntilMidnight = tomorrow.getTime() - now.getTime()
     
+    console.log('Setting midnight timeout for', msUntilMidnight, 'ms from now') // Debug log
+    
     const midnightTimeout = setTimeout(() => {
       const nowAtMidnight = new Date()
       const todayAtMidnight = nowAtMidnight.toISOString().split('T')[0]
+      console.log('Midnight timeout triggered, setting date to', todayAtMidnight) // Debug log
       setCurrentDate(todayAtMidnight)
     }, msUntilMidnight)
 
     // Cleanup function
     return () => {
+      console.log('Cleaning up intervals and timeouts') // Debug log
       clearInterval(interval)
       clearTimeout(midnightTimeout)
     }
