@@ -8,6 +8,7 @@ export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
   const [refreshKey, setRefreshKey] = useState(0) // Force re-render key
+  const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0])
 
   // Effect to handle midnight reset
   useEffect(() => {
@@ -15,11 +16,10 @@ export function Reminders() {
     const interval = setInterval(() => {
       const now = new Date()
       const today = now.toISOString().split('T')[0]
-      const storedDate = localStorage.getItem('lastCheckedDate') || today
       
-      if (today !== storedDate) {
-        console.log('Date changed from', storedDate, 'to', today) // Debug log
-        localStorage.setItem('lastCheckedDate', today)
+      if (today !== currentDate) {
+        console.log('Date changed from', currentDate, 'to', today) // Debug log
+        setCurrentDate(today)
         setRefreshKey(prev => prev + 1) // Force component re-render
       }
     }, 60000) // Check every minute
@@ -38,15 +38,9 @@ export function Reminders() {
       const nowAtMidnight = new Date()
       const todayAtMidnight = nowAtMidnight.toISOString().split('T')[0]
       console.log('Midnight timeout triggered, setting date to', todayAtMidnight) // Debug log
-      localStorage.setItem('lastCheckedDate', todayAtMidnight)
+      setCurrentDate(todayAtMidnight)
       setRefreshKey(prev => prev + 1) // Force component re-render
     }, msUntilMidnight)
-
-    // Initialize stored date if not exists
-    const today = new Date().toISOString().split('T')[0]
-    if (!localStorage.getItem('lastCheckedDate')) {
-      localStorage.setItem('lastCheckedDate', today)
-    }
 
     // Cleanup function
     return () => {
@@ -54,20 +48,17 @@ export function Reminders() {
       clearInterval(interval)
       clearTimeout(midnightTimeout)
     }
-  }, []) // Empty dependency array to run only once
+  }, [currentDate]) // Include currentDate in dependencies
 
-  // Use useMemo to recalculate today's medications when refreshKey changes
+  // Use useMemo to recalculate today's medications when refreshKey or currentDate changes
   const todaysMedications = useMemo(() => {
-    // Get current date fresh each time this is calculated
-    const today = new Date().toISOString().split('T')[0]
-    
-    console.log('Recalculating today\'s medications for date:', today, 'refreshKey:', refreshKey) // Debug log
+    console.log('Recalculating today\'s medications for date:', currentDate, 'refreshKey:', refreshKey) // Debug log
     
     return medications
       .filter(med => med.isActive)
       .flatMap(med => 
         med.timings.map(timing => {
-          const takenTimings = getDailyMedicationStatus(med.id, today)
+          const takenTimings = getDailyMedicationStatus(med.id, currentDate)
           const isTaken = takenTimings.includes(timing)
           
           return {
@@ -81,7 +72,7 @@ export function Reminders() {
           }
         })
       )
-  }, [medications, getDailyMedicationStatus, refreshKey]) // Include refreshKey in dependencies
+  }, [medications, getDailyMedicationStatus, refreshKey, currentDate]) // Include currentDate in dependencies
 
   // Generate upcoming refill reminders
   const upcomingRefills = medications
@@ -102,17 +93,15 @@ export function Reminders() {
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
   const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
-    // Get fresh date for the toggle action
-    const today = new Date().toISOString().split('T')[0]
-    const takenTimings = getDailyMedicationStatus(medicationId, today)
+    const takenTimings = getDailyMedicationStatus(medicationId, currentDate)
     const isTaken = takenTimings.includes(timing)
     
     if (isTaken) {
-      // Undo the taken status and add back to inventory
-      unmarkMedicationTaken(medicationId, timing, today)
+      // Undo the taken status - this should add back to inventory
+      unmarkMedicationTaken(medicationId, timing, currentDate)
     } else {
-      // Mark as taken and remove from inventory
-      markMedicationTaken(medicationId, timing, today)
+      // Mark as taken - this should remove from inventory only if not already taken today
+      markMedicationTaken(medicationId, timing, currentDate)
     }
     
     // Force a re-render to update the UI immediately
@@ -275,7 +264,7 @@ export function Reminders() {
             <div className="text-center py-12">
               <Calendar className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No upcoming refills</h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-gray-500">
                 All your medications have sufficient stock for the next two weeks.
               </p>
             </div>
