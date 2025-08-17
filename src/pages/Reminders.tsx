@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useMedicationStore } from '../store/medicationStore'
 import { Bell, Clock, Calendar, AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react'
 import { format, addDays, isToday, isTomorrow } from 'date-fns'
@@ -56,28 +56,32 @@ export function Reminders() {
     }
   }, []) // Empty dependency array to run only once
 
-  // Use current date instead of state-managed date
-  const today = new Date().toISOString().split('T')[0]
-
-  // Generate today's medication reminders
-  const todaysMedications = medications
-    .filter(med => med.isActive)
-    .flatMap(med => 
-      med.timings.map(timing => {
-        const takenTimings = getDailyMedicationStatus(med.id, today)
-        const isTaken = takenTimings.includes(timing)
-        
-        return {
-          id: `${med.id}-${timing}`,
-          medicationId: med.id,
-          medicationName: med.name,
-          dosage: med.dosage,
-          timing,
-          taken: isTaken,
-          currentQuantity: med.currentQuantity,
-        }
-      })
-    )
+  // Use useMemo to recalculate today's medications when refreshKey changes
+  const todaysMedications = useMemo(() => {
+    // Get current date fresh each time this is calculated
+    const today = new Date().toISOString().split('T')[0]
+    
+    console.log('Recalculating today\'s medications for date:', today, 'refreshKey:', refreshKey) // Debug log
+    
+    return medications
+      .filter(med => med.isActive)
+      .flatMap(med => 
+        med.timings.map(timing => {
+          const takenTimings = getDailyMedicationStatus(med.id, today)
+          const isTaken = takenTimings.includes(timing)
+          
+          return {
+            id: `${med.id}-${timing}`,
+            medicationId: med.id,
+            medicationName: med.name,
+            dosage: med.dosage,
+            timing,
+            taken: isTaken,
+            currentQuantity: med.currentQuantity,
+          }
+        })
+      )
+  }, [medications, getDailyMedicationStatus, refreshKey]) // Include refreshKey in dependencies
 
   // Generate upcoming refill reminders
   const upcomingRefills = medications
@@ -98,6 +102,8 @@ export function Reminders() {
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
   const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
+    // Get fresh date for the toggle action
+    const today = new Date().toISOString().split('T')[0]
     const takenTimings = getDailyMedicationStatus(medicationId, today)
     const isTaken = takenTimings.includes(timing)
     
@@ -108,6 +114,9 @@ export function Reminders() {
       // Mark as taken and remove from inventory
       markMedicationTaken(medicationId, timing, today)
     }
+    
+    // Force a re-render to update the UI immediately
+    setRefreshKey(prev => prev + 1)
   }
 
   const getDateLabel = (date: Date) => {
@@ -182,11 +191,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-  												to={`/medications/edit/${reminder.medicationId}`}
-  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-											>
-  												{reminder.medicationName}
-											</Link>
+                        to={`/medications/edit/${reminder.medicationId}`}
+                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                      >
+                        {reminder.medicationName}
+                      </Link>
                       <p className="text-sm text-gray-500">{reminder.dosage} - {reminder.timing}</p>
                       <p className="text-xs text-gray-400">Current stock: {reminder.currentQuantity}</p>
                     </div>
@@ -238,11 +247,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-  												to={`/medications/edit/${medication.id}`}
-  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-											>
-  												{medication.name}
-											</Link>
+                        to={`/medications/edit/${medication.id}`}
+                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                      >
+                        {medication.name}
+                      </Link>
                       <p className="text-sm text-gray-500">
                         {medication.currentQuantity} remaining • {medication.dosage}
                       </p>
