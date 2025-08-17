@@ -28,7 +28,14 @@ export function Reminders() {
     checkForMidnight()
 
     // Set up interval to check every minute for date changes
-    const interval = setInterval(checkForMidnight, 60000) // Check every minute
+    const interval = setInterval(() => {
+      const now = new Date()
+      const today = now.toISOString().split('T')[0]
+      
+      if (today !== currentDate) {
+        setCurrentDate(today)
+      }
+    }, 60000) // Check every minute
 
     // Also set up a timeout to check at exactly midnight
     const now = new Date()
@@ -39,12 +46,9 @@ export function Reminders() {
     const msUntilMidnight = tomorrow.getTime() - now.getTime()
     
     const midnightTimeout = setTimeout(() => {
-      checkForMidnight()
-      
-      // Set up daily interval starting from midnight
-      const dailyInterval = setInterval(checkForMidnight, 24 * 60 * 60 * 1000) // Every 24 hours
-      
-      return () => clearInterval(dailyInterval)
+      const nowAtMidnight = new Date()
+      const todayAtMidnight = nowAtMidnight.toISOString().split('T')[0]
+      setCurrentDate(todayAtMidnight)
     }, msUntilMidnight)
 
     // Cleanup function
@@ -52,7 +56,7 @@ export function Reminders() {
       clearInterval(interval)
       clearTimeout(midnightTimeout)
     }
-  }, [currentDate])
+  }, []) // Empty dependency array to run only once
 
   // Use currentDate instead of generating today each time
   const today = currentDate
