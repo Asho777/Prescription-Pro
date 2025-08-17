@@ -1,3 +1,6 @@
+// Add this import with your other imports
+import { useNavigate } from 'react-router-dom'
+import { HomeScreenWidget } from '../components/HomeScreenWidget'
 import { useMedicationStore } from '../store/medicationStore'
 import { DashboardStats } from '../types'
 import { Link } from 'react-router-dom'
@@ -13,6 +16,7 @@ import { format, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export function Dashboard() {
+	const navigate = useNavigate() // Add this line
   const { medications, financialRecords, logs, doctors } = useMedicationStore()
 
   // Calculate yearly spending (current year) based on Total Amount For This Purchase
@@ -41,7 +45,7 @@ export function Dashboard() {
 
  	const upcomingMedications = medications
   .filter(med => med.isActive)
-  .slice(0, 30)  // Changed from .slice(0, 5) to .slice(0, 30)
+  .slice(0, 5)  // Back to showing 5 medications
 
   const lowStockMedications = medications
     .filter(med => med.currentQuantity <= 7)
@@ -79,6 +83,15 @@ export function Dashboard() {
         <h1 className="page-title">Dashboard</h1>
         <p className="page-subtitle">Overview of your prescription management</p>
       </div>
+
+		{/* Home Screen Widget - NEW */}
+		<div className="flex justify-center lg:justify-start">
+			<HomeScreenWidget 
+				size="medium"
+				onMedicationClick={(id) => navigate(`/medications/edit/${id}`)}
+				onViewAll={() => navigate('/medications')}
+			/>
+		</div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -157,28 +170,39 @@ export function Dashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Today's Medications */}
+        
+        {/* Original Today's Medications - RESTORED */}
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Medications</h3>
-          {upcomingMedications.length > 0 ? (
-            <div className="space-y-3">
-              {upcomingMedications.map((medication) => (
-                <Link
-                  key={medication.id}
-                  to={`/medications/edit/${medication.id}`}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div>
-                    <p className="font-medium text-gray-900 hover:text-primary-600">{medication.name}</p>
-                    <p className="text-sm text-gray-500">{medication.dosage} - {medication.timings.join(', ')}</p>
-                  </div>
-                  <span className="status-badge status-active">Active</span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-center py-4">No medications scheduled for today</p>
-          )}
+          <div className="space-y-3">
+            {upcomingMedications.map((medication) => (
+              <div key={medication.id} className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <div className="flex-1">
+                  <Link
+                    to={`/medications/edit/${medication.id}`}
+                    className="font-medium text-gray-900 hover:text-primary-600"
+                  >
+                    {medication.name}
+                  </Link>
+                  <p className="text-sm text-gray-500">
+                    {medication.dosage} - {medication.timings?.join(', ') || 'No timing set'}
+                  </p>
+                </div>
+                <div className="flex items-center">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    medication.isActive 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {medication.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {upcomingMedications.length === 0 && (
+              <p className="text-gray-500 text-center py-4">No active medications</p>
+            )}
+          </div>
         </div>
 
         {/* Alerts */}

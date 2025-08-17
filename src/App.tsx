@@ -13,6 +13,7 @@ import { Reports } from './pages/Reports'
 import { Settings } from './pages/Settings'
 import { Doctors } from './pages/Doctors'
 import { Pharmacies } from './pages/Pharmacies'
+import { WidgetDemo } from './pages/WidgetDemo'
 
 function App() {
   const { isAuthenticated } = useUserStore()
@@ -56,6 +57,7 @@ function App() {
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/pharmacies" element={<Pharmacies />} />
         <Route path="/settings" element={<Settings />} />
+		<Route path="/widget-demo" element={<WidgetDemo />} />
       </Routes>
     </Layout>
   )
