@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useMedicationStore } from '../store/medicationStore'
 import { Bell, Clock, Calendar, AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react'
 import { format, addDays, isToday, isTomorrow } from 'date-fns'
@@ -7,8 +7,19 @@ import { Link } from 'react-router-dom'
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-  const today = new Date().toISOString().split('T')[0]
+  // Update current date every minute to handle day transitions
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDate(new Date())
+    }, 60000) // Update every minute
+
+    return () => clearInterval(timer)
+  }, [])
+
+  // Calculate today string from current date state
+  const today = currentDate.toISOString().split('T')[0]
 
   // Generate today's medication reminders
   const todaysMedications = medications
@@ -38,7 +49,7 @@ export function Reminders() {
     })
     .map(med => {
       const daysUntilEmpty = Math.floor(med.currentQuantity / med.frequency)
-      const refillDate = addDays(new Date(), daysUntilEmpty)
+      const refillDate = addDays(currentDate, daysUntilEmpty)
       return {
         ...med,
         daysUntilEmpty,
@@ -49,21 +60,21 @@ export function Reminders() {
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
   const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
-  const takenTimings = getDailyMedicationStatus(medicationId, today)
-  const isTaken = takenTimings.includes(timing)
-  
-  // Prevent double-processing by checking current state before making changes
-  const medication = medications.find(med => med.id === medicationId)
-  if (!medication) return
-  
-  if (isTaken) {
-    // Only undo if it's actually marked as taken
-    unmarkMedicationTaken(medicationId, timing, today)
-  } else {
-    // Only mark as taken if it's not already taken
-    markMedicationTaken(medicationId, timing, today)
+    const takenTimings = getDailyMedicationStatus(medicationId, today)
+    const isTaken = takenTimings.includes(timing)
+    
+    // Prevent double-processing by checking current state before making changes
+    const medication = medications.find(med => med.id === medicationId)
+    if (!medication) return
+    
+    if (isTaken) {
+      // Only undo if it's actually marked as taken
+      unmarkMedicationTaken(medicationId, timing, today)
+    } else {
+      // Only mark as taken if it's not already taken
+      markMedicationTaken(medicationId, timing, today)
+    }
   }
-}
 
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return 'Today'
@@ -137,11 +148,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-  												to={`/medications/edit/${reminder.medicationId}`}
-  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-											>
-  												{reminder.medicationName}
-											</Link>
+                        to={`/medications/edit/${reminder.medicationId}`}
+                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                      >
+                        {reminder.medicationName}
+                      </Link>
                       <p className="text-sm text-gray-500">{reminder.dosage} - {reminder.timing}</p>
                       <p className="text-xs text-gray-400">Current stock: {reminder.currentQuantity}</p>
                     </div>
@@ -193,11 +204,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-  												to={`/medications/edit/${medication.id}`}
-  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-											>
-  												{medication.name}
-											</Link>
+                        to={`/medications/edit/${medication.id}`}
+                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+                      >
+                        {medication.name}
+                      </Link>
                       <p className="text-sm text-gray-500">
                         {medication.currentQuantity} remaining • {medication.dosage}
                       </p>
