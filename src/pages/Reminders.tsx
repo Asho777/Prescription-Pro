@@ -7,39 +7,68 @@ import { Link } from 'react-router-dom'
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentTime, setCurrentTime] = useState(new Date())
 
-  // Update current date every minute to handle day transitions
+  // Update current time every minute (same as HomeScreenWidget)
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentDate(new Date())
+      setCurrentTime(new Date())
     }, 60000) // Update every minute
 
     return () => clearInterval(timer)
   }, [])
 
-  // Calculate today string from current date state
-  const today = currentDate.toISOString().split('T')[0]
-
-  // Generate today's medication reminders
-  const todaysMedications = medications
-    .filter(med => med.isActive)
-    .flatMap(med => 
-      med.timings.map(timing => {
-        const takenTimings = getDailyMedicationStatus(med.id, today)
-        const isTaken = takenTimings.includes(timing)
-        
-        return {
-          id: `${med.id}-${timing}`,
-          medicationId: med.id,
-          medicationName: med.name,
-          dosage: med.dosage,
-          timing,
-          taken: isTaken,
-          currentQuantity: med.currentQuantity,
+  // Helper function to safely format date (same as HomeScreenWidget)
+  const safeFormat = (date: Date | string, formatStr: string): string => {
+    try {
+      if (typeof date === 'string') {
+        const parsedDate = new Date(date)
+        if (isNaN(parsedDate.getTime())) {
+          return 'Invalid Date'
         }
-      })
-    )
+        return format(parsedDate, formatStr)
+      }
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date'
+      }
+      return format(date, formatStr)
+    } catch (error) {
+      console.error('Date formatting error:', error)
+      return 'Invalid Date'
+    }
+  }
+
+  // Calculate today string using the same method as HomeScreenWidget
+  const today = safeFormat(currentTime, 'yyyy-MM-dd')
+
+  // Generate today's medication reminders with proper dependency on currentTime
+  const todaysMedications = (() => {
+    try {
+      return medications
+        .filter(med => med?.isActive && med?.timings && Array.isArray(med.timings))
+        .flatMap(med => 
+          med.timings
+            .filter(time => time && typeof time === 'string')
+            .map(timing => {
+              const takenTimings = getDailyMedicationStatus ? getDailyMedicationStatus(med.id, today) : []
+              const isTaken = Array.isArray(takenTimings) ? takenTimings.includes(timing) : false
+              
+              return {
+                id: `${med.id}-${timing}`,
+                medicationId: med.id,
+                medicationName: med.name,
+                dosage: med.dosage,
+                timing,
+                taken: isTaken,
+                currentQuantity: med.currentQuantity,
+              }
+            })
+        )
+    } catch (error) {
+      console.error('Error calculating today\'s medications:', error)
+      return []
+    }
+  })()
 
   // Generate upcoming refill reminders
   const upcomingRefills = medications
@@ -49,7 +78,7 @@ export function Reminders() {
     })
     .map(med => {
       const daysUntilEmpty = Math.floor(med.currentQuantity / med.frequency)
-      const refillDate = addDays(currentDate, daysUntilEmpty)
+      const refillDate = addDays(currentTime, daysUntilEmpty)
       return {
         ...med,
         daysUntilEmpty,
@@ -60,19 +89,27 @@ export function Reminders() {
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
   const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
-    const takenTimings = getDailyMedicationStatus(medicationId, today)
-    const isTaken = takenTimings.includes(timing)
-    
-    // Prevent double-processing by checking current state before making changes
-    const medication = medications.find(med => med.id === medicationId)
-    if (!medication) return
-    
-    if (isTaken) {
-      // Only undo if it's actually marked as taken
-      unmarkMedicationTaken(medicationId, timing, today)
-    } else {
-      // Only mark as taken if it's not already taken
-      markMedicationTaken(medicationId, timing, today)
+    try {
+      const takenTimings = getDailyMedicationStatus(medicationId, today)
+      const isTaken = takenTimings.includes(timing)
+      
+      // Prevent double-processing by checking current state before making changes
+      const medication = medications.find(med => med.id === medicationId)
+      if (!medication) return
+      
+      if (isTaken) {
+        // Only undo if it's actually marked as taken
+        if (unmarkMedicationTaken) {
+          unmarkMedicationTaken(medicationId, timing, today)
+        }
+      } else {
+        // Only mark as taken if it's not already taken
+        if (markMedicationTaken) {
+          markMedicationTaken(medicationId, timing, today)
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling medication:', error)
     }
   }
 
