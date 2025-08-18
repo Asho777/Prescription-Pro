@@ -13,7 +13,8 @@ import {
   Stethoscope,
   Building2,
   LogOut,
-  User
+  User,
+  LayoutDashboard
 } from 'lucide-react'
 
 interface LayoutProps {
@@ -21,7 +22,8 @@ interface LayoutProps {
 }
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Home', href: '/', icon: Home },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Medications', href: '/medications', icon: Pill },
   { name: 'Reminders', href: '/reminders', icon: Bell },
   { name: 'Reports', href: '/reports', icon: BarChart3 },
@@ -142,7 +144,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
             <div className="flex flex-1 items-center">
               <h1 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                {navigation.find(item => item.href === location.pathname)?.name || 'Dashboard'}
+                {navigation.find(item => item.href === location.pathname)?.name || 'Home'}
               </h1>
             </div>
             

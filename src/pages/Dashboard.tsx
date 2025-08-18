@@ -1,6 +1,4 @@
-// Add this import with your other imports
 import { useNavigate } from 'react-router-dom'
-import { HomeScreenWidget } from '../components/HomeScreenWidget'
 import { useMedicationStore } from '../store/medicationStore'
 import { DashboardStats } from '../types'
 import { Link } from 'react-router-dom'
@@ -16,7 +14,7 @@ import { format, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 
 export function Dashboard() {
-	const navigate = useNavigate() // Add this line
+  const navigate = useNavigate()
   const { medications, financialRecords, logs, doctors } = useMedicationStore()
 
   // Calculate yearly spending (current year) based on Total Amount For This Purchase
@@ -43,9 +41,9 @@ export function Dashboard() {
     adherenceRate: 85 // This would be calculated from logs in a real app
   }
 
- 	const upcomingMedications = medications
-  .filter(med => med.isActive)
-  .slice(0, 5)  // Back to showing 5 medications
+  const upcomingMedications = medications
+    .filter(med => med.isActive)
+    .slice(0, 5)
 
   const lowStockMedications = medications
     .filter(med => med.currentQuantity <= 7)
@@ -83,15 +81,6 @@ export function Dashboard() {
         <h1 className="page-title">Dashboard</h1>
         <p className="page-subtitle">Overview of your prescription management</p>
       </div>
-
-		{/* Home Screen Widget - NEW */}
-		<div className="flex justify-center lg:justify-start">
-			<HomeScreenWidget 
-				size="medium"
-				onMedicationClick={(id) => navigate(`/medications/edit/${id}`)}
-				onViewAll={() => navigate('/medications')}
-			/>
-		</div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,7 +160,7 @@ export function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         
-        {/* Original Today's Medications - RESTORED */}
+        {/* Today's Medications */}
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Today's Medications</h3>
           <div className="space-y-3">

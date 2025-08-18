@@ -4,6 +4,7 @@ import { useUserStore } from './store/userStore'
 import { useMedicationStore } from './store/medicationStore'
 import { Layout } from './components/Layout'
 import { AuthContainer } from './components/AuthContainer'
+import { Home } from './pages/Home'
 import { Dashboard } from './pages/Dashboard'
 import { Medications } from './pages/Medications'
 import { AddMedication } from './pages/AddMedication'
@@ -45,7 +46,8 @@ useEffect(() => {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/medications" element={<Medications />} />
         <Route path="/medications/add" element={<AddMedication />} />
         <Route path="/medications/edit/:id" element={<EditMedication />} />
@@ -54,7 +56,7 @@ useEffect(() => {
         <Route path="/doctors" element={<Doctors />} />
         <Route path="/pharmacies" element={<Pharmacies />} />
         <Route path="/settings" element={<Settings />} />
-		<Route path="/widget-demo" element={<WidgetDemo />} />
+        <Route path="/widget-demo" element={<WidgetDemo />} />
       </Routes>
     </Layout>
   )

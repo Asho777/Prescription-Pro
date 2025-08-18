@@ -393,7 +393,7 @@ export function HomeScreenWidget({
             }`}
           >
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900">{medData.medication.name || 'Unknown Medication'}</h4>
+              <h4 className="font-medium text-gray-900 dark:!text-black">{medData.medication.name || 'Unknown Medication'}</h4>
               <span className="text-xs text-gray-500">{medData.medication.dosage || 'No dosage'}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
