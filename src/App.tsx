@@ -19,27 +19,24 @@ function App() {
   const { isAuthenticated } = useUserStore()
   const { processDailyStockReduction } = useMedicationStore()
 
-  useEffect(() => {
-    // Process daily stock reduction on app load
+useEffect(() => {
+  // Set up daily stock reduction at midnight (but don't run immediately on app load)
+  const now = new Date()
+  const tomorrow = new Date(now)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(0, 0, 0, 0)
+  
+  const msUntilMidnight = tomorrow.getTime() - now.getTime()
+  
+  const timeoutId = setTimeout(() => {
     processDailyStockReduction()
     
-    // Set up daily stock reduction at midnight
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-    
-    const msUntilMidnight = tomorrow.getTime() - now.getTime()
-    
-    const timeoutId = setTimeout(() => {
-      processDailyStockReduction()
-      
-      // Set up daily interval after first midnight
-      setInterval(processDailyStockReduction, 24 * 60 * 60 * 1000)
-    }, msUntilMidnight)
-    
-    return () => clearTimeout(timeoutId)
-  }, [processDailyStockReduction])
+    // Set up daily interval after first midnight
+    setInterval(processDailyStockReduction, 24 * 60 * 60 * 1000)
+  }, msUntilMidnight)
+  
+  return () => clearTimeout(timeoutId)
+}, [processDailyStockReduction])  
 
   if (!isAuthenticated) {
     return <AuthContainer />

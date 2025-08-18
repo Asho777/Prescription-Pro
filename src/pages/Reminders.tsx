@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { useMedicationStore } from '../store/medicationStore'
 import { Bell, Clock, Calendar, AlertTriangle, Plus, Edit, Trash2 } from 'lucide-react'
 import { format, addDays, isToday, isTomorrow } from 'date-fns'
@@ -7,72 +7,28 @@ import { Link } from 'react-router-dom'
 export function Reminders() {
   const { medications, reminders, addReminder, updateReminder, deleteReminder, markMedicationTaken, unmarkMedicationTaken, getDailyMedicationStatus } = useMedicationStore()
   const [activeTab, setActiveTab] = useState<'today' | 'upcoming' | 'settings'>('today')
-  const [refreshKey, setRefreshKey] = useState(0) // Force re-render key
-  const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split('T')[0])
 
-  // Effect to handle midnight reset
-  useEffect(() => {
-    // Set up interval to check every minute for date changes
-    const interval = setInterval(() => {
-      const now = new Date()
-      const today = now.toISOString().split('T')[0]
-      
-      if (today !== currentDate) {
-        console.log('Date changed from', currentDate, 'to', today) // Debug log
-        setCurrentDate(today)
-        setRefreshKey(prev => prev + 1) // Force component re-render
-      }
-    }, 60000) // Check every minute
+  const today = new Date().toISOString().split('T')[0]
 
-    // Also set up a timeout to check at exactly midnight
-    const now = new Date()
-    const tomorrow = new Date(now)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 1, 0) // 1 second after midnight
-    
-    const msUntilMidnight = tomorrow.getTime() - now.getTime()
-    
-    console.log('Setting midnight timeout for', msUntilMidnight, 'ms from now') // Debug log
-    
-    const midnightTimeout = setTimeout(() => {
-      const nowAtMidnight = new Date()
-      const todayAtMidnight = nowAtMidnight.toISOString().split('T')[0]
-      console.log('Midnight timeout triggered, setting date to', todayAtMidnight) // Debug log
-      setCurrentDate(todayAtMidnight)
-      setRefreshKey(prev => prev + 1) // Force component re-render
-    }, msUntilMidnight)
-
-    // Cleanup function
-    return () => {
-      console.log('Cleaning up intervals and timeouts') // Debug log
-      clearInterval(interval)
-      clearTimeout(midnightTimeout)
-    }
-  }, [currentDate]) // Include currentDate in dependencies
-
-  // Use useMemo to recalculate today's medications when refreshKey or currentDate changes
-  const todaysMedications = useMemo(() => {
-    console.log('Recalculating today\'s medications for date:', currentDate, 'refreshKey:', refreshKey) // Debug log
-    
-    return medications
-      .filter(med => med.isActive)
-      .flatMap(med => 
-        med.timings.map(timing => {
-          const takenTimings = getDailyMedicationStatus(med.id, currentDate)
-          const isTaken = takenTimings.includes(timing)
-          
-          return {
-            id: `${med.id}-${timing}`,
-            medicationId: med.id,
-            medicationName: med.name,
-            dosage: med.dosage,
-            timing,
-            taken: isTaken,
-            currentQuantity: med.currentQuantity,
-          }
-        })
-      )
-  }, [medications, getDailyMedicationStatus, refreshKey, currentDate]) // Include currentDate in dependencies
+  // Generate today's medication reminders
+  const todaysMedications = medications
+    .filter(med => med.isActive)
+    .flatMap(med => 
+      med.timings.map(timing => {
+        const takenTimings = getDailyMedicationStatus(med.id, today)
+        const isTaken = takenTimings.includes(timing)
+        
+        return {
+          id: `${med.id}-${timing}`,
+          medicationId: med.id,
+          medicationName: med.name,
+          dosage: med.dosage,
+          timing,
+          taken: isTaken,
+          currentQuantity: med.currentQuantity,
+        }
+      })
+    )
 
   // Generate upcoming refill reminders
   const upcomingRefills = medications
@@ -93,20 +49,21 @@ export function Reminders() {
     .sort((a, b) => a.daysUntilEmpty - b.daysUntilEmpty)
 
   const handleToggleMedicationTaken = (medicationId: string, timing: string) => {
-    const takenTimings = getDailyMedicationStatus(medicationId, currentDate)
-    const isTaken = takenTimings.includes(timing)
-    
-    if (isTaken) {
-      // Undo the taken status - this should add back to inventory
-      unmarkMedicationTaken(medicationId, timing, currentDate)
-    } else {
-      // Mark as taken - this should remove from inventory only if not already taken today
-      markMedicationTaken(medicationId, timing, currentDate)
-    }
-    
-    // Force a re-render to update the UI immediately
-    setRefreshKey(prev => prev + 1)
+  const takenTimings = getDailyMedicationStatus(medicationId, today)
+  const isTaken = takenTimings.includes(timing)
+  
+  // Prevent double-processing by checking current state before making changes
+  const medication = medications.find(med => med.id === medicationId)
+  if (!medication) return
+  
+  if (isTaken) {
+    // Only undo if it's actually marked as taken
+    unmarkMedicationTaken(medicationId, timing, today)
+  } else {
+    // Only mark as taken if it's not already taken
+    markMedicationTaken(medicationId, timing, today)
   }
+}
 
   const getDateLabel = (date: Date) => {
     if (isToday(date)) return 'Today'
@@ -180,11 +137,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-                        to={`/medications/edit/${reminder.medicationId}`}
-                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-                      >
-                        {reminder.medicationName}
-                      </Link>
+  												to={`/medications/edit/${reminder.medicationId}`}
+  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+											>
+  												{reminder.medicationName}
+											</Link>
                       <p className="text-sm text-gray-500">{reminder.dosage} - {reminder.timing}</p>
                       <p className="text-xs text-gray-400">Current stock: {reminder.currentQuantity}</p>
                     </div>
@@ -236,11 +193,11 @@ export function Reminders() {
                     </div>
                     <div>
                       <Link 
-                        to={`/medications/edit/${medication.id}`}
-                        className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
-                      >
-                        {medication.name}
-                      </Link>
+  												to={`/medications/edit/${medication.id}`}
+  												className="text-lg font-medium text-gray-900 hover:text-primary-600 transition-colors"
+											>
+  												{medication.name}
+											</Link>
                       <p className="text-sm text-gray-500">
                         {medication.currentQuantity} remaining • {medication.dosage}
                       </p>
@@ -264,7 +221,7 @@ export function Reminders() {
             <div className="text-center py-12">
               <Calendar className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-sm font-medium text-gray-900">No upcoming refills</h3>
-              <p className="mt-1 text-gray-500">
+              <p className="mt-1 text-sm text-gray-500">
                 All your medications have sufficient stock for the next two weeks.
               </p>
             </div>
