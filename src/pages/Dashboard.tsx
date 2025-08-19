@@ -43,7 +43,7 @@ export function Dashboard() {
 
   const upcomingMedications = medications
     .filter(med => med.isActive)
-    .slice(0, 5)
+    .slice(0, 10)
 
   const lowStockMedications = medications
     .filter(med => med.currentQuantity <= 7)

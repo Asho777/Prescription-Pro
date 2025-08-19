@@ -386,7 +386,7 @@ export function HomeScreenWidget({
             key={medData.medication.id} 
             className={`p-3 rounded-lg border transition-all ${
               medData.allTaken 
-                ? 'bg-green-50 border-green-200' 
+                ? 'bg-gray-50 border-green-200' 
                 : medData.hasOverdue 
                   ? 'bg-red-50 border-red-200'
                   : 'bg-gray-50 border-gray-200'
