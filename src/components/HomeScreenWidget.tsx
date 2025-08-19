@@ -251,9 +251,9 @@ export function HomeScreenWidget({
             <p className="text-sm text-gray-600">{nextMed.medication.dosage || 'No dosage info'}</p>
             <button
               onClick={() => handleToggleMedication(nextMed.medication.id, nextMed.timing.time, nextMed.timing.taken)}
-              className="w-full bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-base"
             >
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-5 w-5" />
               Mark as Taken
             </button>
           </div>
@@ -312,7 +312,7 @@ export function HomeScreenWidget({
                     <button
                       key={timing.time}
                       onClick={() => handleToggleMedication(medData.medication.id, timing.time, timing.taken)}
-                      className={`text-xs px-2 py-1 rounded-full border transition-all ${
+                      className={`text-sm px-3 py-2 rounded-full border transition-all ${
                         timing.taken
                           ? 'bg-green-100 text-green-800 border-green-200'
                           : timing.overdue
@@ -393,7 +393,7 @@ export function HomeScreenWidget({
             }`}
           >
             <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900 dark:!text-black">{medData.medication.name || 'Unknown Medication'}</h4>
+              <h4 className="font-medium text-gray-900">{medData.medication.name || 'Unknown Medication'}</h4>
               <span className="text-xs text-gray-500">{medData.medication.dosage || 'No dosage'}</span>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -401,7 +401,7 @@ export function HomeScreenWidget({
                 <button
                   key={timing.time}
                   onClick={() => handleToggleMedication(medData.medication.id, timing.time, timing.taken)}
-                  className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     timing.taken
                       ? 'bg-green-100 text-green-800 hover:bg-green-200'
                       : timing.overdue
@@ -410,9 +410,9 @@ export function HomeScreenWidget({
                   }`}
                 >
                   {timing.taken ? (
-                    <CheckCircle2 className="h-3 w-3" />
+                    <CheckCircle2 className="h-4 w-4" />
                   ) : (
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-4 w-4" />
                   )}
                   {formatTime(timing.time)}
                 </button>
@@ -433,14 +433,14 @@ export function HomeScreenWidget({
       <div className="flex gap-2 pt-4 border-t border-gray-200">
         <button
           onClick={onViewAll}
-          className="flex-1 bg-primary-600 text-white py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
+          className="flex-1 bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
         >
           View All Medications
         </button>
         {nextMed && (
           <button
             onClick={() => handleToggleMedication(nextMed.medication.id, nextMed.timing.time, nextMed.timing.taken)}
-            className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
+            className="bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium whitespace-nowrap"
           >
             Quick Mark
           </button>

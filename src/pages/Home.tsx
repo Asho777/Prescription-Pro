@@ -1,4 +1,4 @@
- import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { HomeScreenWidget } from '../components/HomeScreenWidget'
 
 export function Home() {
@@ -29,12 +29,6 @@ export function Home() {
             className="btn-primary"
           >
             Add New Medication
-          </button>
-          <button
-            onClick={() => navigate('/medications')}
-            className="btn-secondary"
-          >
-            View All Medications
           </button>
           <button
             onClick={() => navigate('/reminders')}
