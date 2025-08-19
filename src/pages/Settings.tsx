@@ -308,7 +308,7 @@ export function Settings() {
         <div className="flex items-center justify-between">
           <div>
             <label className="text-sm font-medium text-gray-900">Reset to Defaults</label>
-            <p className="text-sm text-gray-500">Reset all settings to their default values (AUD currency, DD/MM/YYYY date format, 12h time, light theme)</p>
+            <p className="text-sm text-gray-500">Reset all settings to their default values (AUD currency, DD/MM/YYYY date format, 12h time, Dark theme)</p>
           </div>
           <button
             onClick={handleResetSettings}
