@@ -20,7 +20,7 @@ const defaultSettings: AppSettings = {
   currency: 'AUD',
   dateFormat: 'dd/MM/yyyy',
   timeFormat: '12h',
-  theme: 'light',
+  theme: 'dark',
   language: 'en',
   backupEnabled: true,
   biometricAuth: false,
