@@ -44,7 +44,7 @@ export function Reminders() {
   // Generate today's medication reminders with proper dependency on currentTime
   const todaysMedications = (() => {
     try {
-      return medications
+      const medReminders = medications
         .filter(med => med?.isActive && med?.timings && Array.isArray(med.timings))
         .flatMap(med => 
           med.timings
@@ -64,6 +64,33 @@ export function Reminders() {
               }
             })
         )
+
+      // Group by medication
+      const medicationGroups = new Map()
+      medReminders.forEach(reminder => {
+        if (!medicationGroups.has(reminder.medicationId)) {
+          medicationGroups.set(reminder.medicationId, [])
+        }
+        medicationGroups.get(reminder.medicationId).push(reminder)
+      })
+      
+      // Sort each medication's timings and flatten back to array
+      const sortedReminders = []
+      Array.from(medicationGroups.values())
+        .forEach(medicationTimings => {
+          // Sort timings within each medication (morning first, then bedtime)
+          medicationTimings.sort((a, b) => b.timing.localeCompare(a.timing))
+          sortedReminders.push(...medicationTimings)
+        })
+      
+      // Sort all reminders by their timing (morning → lunch → bedtime)
+      sortedReminders.sort((a, b) => {
+        return b.timing.localeCompare(a.timing)
+      })
+      
+      return sortedReminders
+
+      return medReminders
     } catch (error) {
       console.error('Error calculating today\'s medications:', error)
       return []

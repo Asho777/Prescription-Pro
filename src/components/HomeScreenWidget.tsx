@@ -134,21 +134,17 @@ export function HomeScreenWidget({
         }
       }).filter(medData => medData.timings.length > 0) // Only include medications with valid timings
 
-      // Sort by priority: overdue first, then by next timing
+      /// Sort each medication's timings internally first
+      todaysData.forEach(medData => {
+        medData.timings.sort((a, b) => b.time.localeCompare(a.time))
+      })
+      
+      // Sort medications by their earliest timing (morning → lunch → bedtime)
       todaysData.sort((a, b) => {
-        // Overdue medications first
-        if (a.hasOverdue && !b.hasOverdue) return -1
-        if (!a.hasOverdue && b.hasOverdue) return 1
+        const aEarliestTime = a.timings.length > 0 ? a.timings[0].time : '00:00'
+        const bEarliestTime = b.timings.length > 0 ? b.timings[0].time : '00:00'
         
-        // Then by next upcoming timing
-        const aNextTime = a.timings.find(t => !t.taken)?.time
-        const bNextTime = b.timings.find(t => !t.taken)?.time
-        
-        if (aNextTime && bNextTime) {
-          return aNextTime.localeCompare(bNextTime)
-        }
-        
-        return 0
+        return bEarliestTime.localeCompare(aEarliestTime)
       })
       
       setTodaysMedications(todaysData)
