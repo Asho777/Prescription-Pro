@@ -13,21 +13,29 @@ import {
 import { format, isAfter, isBefore, addDays } from 'date-fns'
 import toast from 'react-hot-toast'
 
+// Helper function to get current year total with reset logic (same as Reports.tsx)
+const getCurrentYearlyTotal = (medication: any) => {
+  const currentYear = new Date().getFullYear()
+  const lastResetYear = medication.lastYearlyResetDate 
+    ? new Date(medication.lastYearlyResetDate).getFullYear()
+    : currentYear - 1 // If no reset date, assume it needs reset
+
+  // If we're in a new year, return 0
+  if (currentYear > lastResetYear) {
+    return 0
+  }
+  
+  return medication.yearlyTotalCost || 0
+}
+
 export function Dashboard() {
   const navigate = useNavigate()
   const { medications, financialRecords, logs, doctors } = useMedicationStore()
 
-  // Calculate yearly spending (current year) based on Total Amount For This Purchase
-  const currentYear = new Date().getFullYear()
-  const yearlySpending = medications
-    .filter(med => {
-      const prescriptionDate = new Date(med.prescriptionDate)
-      return prescriptionDate.getFullYear() === currentYear
-    })
-    .reduce((sum, med) => {
-      const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
-      return sum + totalAmountForPurchase
-    }, 0)
+  // Calculate yearly spending using the same method as Reports.tsx
+  const yearlySpending = medications.reduce((sum, med) => {
+    return sum + getCurrentYearlyTotal(med)
+  }, 0)
 
   const stats: DashboardStats = {
     totalMedications: medications.length,
@@ -73,6 +81,8 @@ export function Dashboard() {
       )
     })
   }
+
+  const currentYear = new Date().getFullYear()
 
   return (
     <div className="space-y-6">
@@ -139,7 +149,7 @@ export function Dashboard() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">{currentYear} Spending</p>
-              <p className="text-2xl font-bold text-gray-900">A${stats.yearlySpending.toFixed(2)}</p>
+              <p className="text-2xl font-bold text-gray-900">${stats.yearlySpending.toFixed(2)}</p>
             </div>
           </div>
         </div>

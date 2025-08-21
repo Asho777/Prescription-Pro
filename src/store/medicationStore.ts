@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Medication, Doctor, Pharmacy, Reminder, MedicationLog, FinancialRecord, DailyMedicationTaken } from '../types'
+import { Medication, Doctor, Pharmacy, Reminder, MedicationLog, FinancialRecord, DailyMedicationTaken, PurchaseHistory } from '../types'
 
 interface MedicationStore {
   medications: Medication[]
@@ -10,6 +10,7 @@ interface MedicationStore {
   logs: MedicationLog[]
   financialRecords: FinancialRecord[]
   dailyMedicationTaken: DailyMedicationTaken[]
+  purchaseHistory: PurchaseHistory[] // New field for purchase history
   
   // Medication actions
   addMedication: (medication: Omit<Medication, 'id' | 'createdAt' | 'updatedAt'>) => void
@@ -38,10 +39,13 @@ interface MedicationStore {
   // Financial actions
   addFinancialRecord: (record: Omit<FinancialRecord, 'id'>) => void
   
+  // Purchase history actions
+  addPurchaseHistory: (purchase: Omit<PurchaseHistory, 'id' | 'createdAt'>) => void
+  
   // Daily medication tracking
-	markMedicationTaken: (medicationId: string, timing: string, date: string) => void
-	unmarkMedicationTaken: (medicationId: string, timing: string, date: string) => void  // ← ADD THIS LINE
-	getDailyMedicationStatus: (medicationId: string, date: string) => string[]
+  markMedicationTaken: (medicationId: string, timing: string, date: string) => void
+  unmarkMedicationTaken: (medicationId: string, timing: string, date: string) => void
+  getDailyMedicationStatus: (medicationId: string, date: string) => string[]
   
   // Auto-reduce stock daily
   processDailyStockReduction: () => void
@@ -59,6 +63,7 @@ export const useMedicationStore = create<MedicationStore>()(
       logs: [],
       financialRecords: [],
       dailyMedicationTaken: [],
+      purchaseHistory: [], // Initialize new field
       
       addMedication: (medication) => {
         const now = new Date()
@@ -89,6 +94,7 @@ export const useMedicationStore = create<MedicationStore>()(
           logs: state.logs.filter((log) => log.medicationId !== id),
           financialRecords: state.financialRecords.filter((record) => record.medicationId !== id),
           dailyMedicationTaken: state.dailyMedicationTaken.filter((record) => record.medicationId !== id),
+          purchaseHistory: state.purchaseHistory.filter((record) => record.medicationId !== id), // Also clean up purchase history
         }))
       },
       
@@ -196,91 +202,102 @@ export const useMedicationStore = create<MedicationStore>()(
           financialRecords: [...state.financialRecords, newRecord]
         }))
       },
+
+      // New function to add purchase history
+      addPurchaseHistory: (purchase) => {
+        const newPurchase: PurchaseHistory = {
+          ...purchase,
+          id: generateId(),
+          createdAt: new Date(),
+        }
+        set((state) => ({
+          purchaseHistory: [...state.purchaseHistory, newPurchase]
+        }))
+      },
       
       markMedicationTaken: (medicationId, timing, date) => {
-  			const state = get()
-  			const existingRecord = state.dailyMedicationTaken.find(
-    			record => record.medicationId === medicationId && record.date === date
-  	)
-  
-  			// Check if this specific timing has already been taken
-  			if (existingRecord && existingRecord.timingsTaken.includes(timing)) {
-    			// This timing is already marked as taken, don't process again
-    			return
-  	}
-  
-  			if (existingRecord) {
-    			set((state) => ({
-      			dailyMedicationTaken: state.dailyMedicationTaken.map(record =>
-        		record.id === existingRecord.id
-          	? { ...record, timingsTaken: [...record.timingsTaken, timing] }
-          	: record
-      	)
-    	}))
-  } else {
-    const newRecord: DailyMedicationTaken = {
-      id: generateId(),
-      medicationId,
-      date,
-      timingsTaken: [timing],
-      createdAt: new Date(),
-    }
-    set((state) => ({
-      dailyMedicationTaken: [...state.dailyMedicationTaken, newRecord]
-    }))
-  }
-  
-  // Reduce medication stock (only executes if timing wasn't already taken)
-  const medication = state.medications.find(med => med.id === medicationId)
-  if (medication) {
-    get().updateMedication(medicationId, {
-      currentQuantity: Math.max(0, medication.currentQuantity - 1)
-    })
-  }
-},
-		   
-      // ← ADD THE NEW FUNCTION HERE ←
+        const state = get()
+        const existingRecord = state.dailyMedicationTaken.find(
+          record => record.medicationId === medicationId && record.date === date
+        )
+
+        // Check if this specific timing has already been taken
+        if (existingRecord && existingRecord.timingsTaken.includes(timing)) {
+          // This timing is already marked as taken, don't process again
+          return
+        }
+
+        if (existingRecord) {
+          set((state) => ({
+            dailyMedicationTaken: state.dailyMedicationTaken.map(record =>
+              record.id === existingRecord.id
+                ? { ...record, timingsTaken: [...record.timingsTaken, timing] }
+                : record
+            )
+          }))
+        } else {
+          const newRecord: DailyMedicationTaken = {
+            id: generateId(),
+            medicationId,
+            date,
+            timingsTaken: [timing],
+            createdAt: new Date(),
+          }
+          set((state) => ({
+            dailyMedicationTaken: [...state.dailyMedicationTaken, newRecord]
+          }))
+        }
+
+        // Reduce medication stock (only executes if timing wasn't already taken)
+        const medication = state.medications.find(med => med.id === medicationId)
+        if (medication) {
+          get().updateMedication(medicationId, {
+            currentQuantity: Math.max(0, medication.currentQuantity - 1)
+          })
+        }
+      },
+      
       unmarkMedicationTaken: (medicationId, timing, date) => {
-  const state = get()
-  const existingRecord = state.dailyMedicationTaken.find(
-    record => record.medicationId === medicationId && record.date === date
-  )
-  
-  // Check if this specific timing is actually marked as taken
-  if (!existingRecord || !existingRecord.timingsTaken.includes(timing)) {
-    // This timing wasn't marked as taken, don't process
-    return
-  }
-  
-  // Remove the timing from the taken list
-  const updatedTimings = existingRecord.timingsTaken.filter(t => t !== timing)
-  
-  if (updatedTimings.length > 0) {
-    // Update the record with remaining timings
-    set((state) => ({
-      dailyMedicationTaken: state.dailyMedicationTaken.map(record =>
-        record.id === existingRecord.id
-          ? { ...record, timingsTaken: updatedTimings }
-          : record
-      )
-    }))
-  } else {
-    // Remove the entire record if no timings left
-    set((state) => ({
-      dailyMedicationTaken: state.dailyMedicationTaken.filter(
-        record => record.id !== existingRecord.id
-      )
-    }))
-  }
-  
-  // Restore medication stock (only executes if timing was actually taken)
-  const medication = state.medications.find(med => med.id === medicationId)
-  if (medication) {
-    get().updateMedication(medicationId, {
-      currentQuantity: medication.currentQuantity + 1
-    })
-  }
-},
+        const state = get()
+        const existingRecord = state.dailyMedicationTaken.find(
+          record => record.medicationId === medicationId && record.date === date
+        )
+        
+        // Check if this specific timing is actually marked as taken
+        if (!existingRecord || !existingRecord.timingsTaken.includes(timing)) {
+          // This timing wasn't marked as taken, don't process
+          return
+        }
+        
+        // Remove the timing from the taken list
+        const updatedTimings = existingRecord.timingsTaken.filter(t => t !== timing)
+        
+        if (updatedTimings.length > 0) {
+          // Update the record with remaining timings
+          set((state) => ({
+            dailyMedicationTaken: state.dailyMedicationTaken.map(record =>
+              record.id === existingRecord.id
+                ? { ...record, timingsTaken: updatedTimings }
+                : record
+            )
+          }))
+        } else {
+          // Remove the entire record if no timings left
+          set((state) => ({
+            dailyMedicationTaken: state.dailyMedicationTaken.filter(
+              record => record.id !== existingRecord.id
+            )
+          }))
+        }
+        
+        // Restore medication stock (only executes if timing was actually taken)
+        const medication = state.medications.find(med => med.id === medicationId)
+        if (medication) {
+          get().updateMedication(medicationId, {
+            currentQuantity: medication.currentQuantity + 1
+          })
+        }
+      },
                
       getDailyMedicationStatus: (medicationId, date) => {
         const record = get().dailyMedicationTaken.find(
@@ -289,38 +306,38 @@ export const useMedicationStore = create<MedicationStore>()(
         return record ? record.timingsTaken : []
       },
       
-   processDailyStockReduction: () => {
-  // This function should only run once per day and be manually triggered
-  // It should not run automatically on app load or refresh
-  const today = new Date().toISOString().split('T')[0]
-  const state = get()
-  
-  // Check if we've already processed today's stock reduction
-  const lastProcessedDate = localStorage.getItem('lastStockReductionDate')
-  if (lastProcessedDate === today) {
-    // Already processed today, don't run again
-    return
-  }
-  
-  state.medications.forEach(medication => {
-    if (medication.isActive) {
-      const takenToday = state.dailyMedicationTaken.find(
-        record => record.medicationId === medication.id && record.date === today
-      )
-      
-      // Only reduce stock if medication wasn't taken at all today
-      // This should be a manual process, not automatic
-      if (!takenToday) {
-        get().updateMedication(medication.id, {
-          currentQuantity: Math.max(0, medication.currentQuantity - medication.frequency)
+      processDailyStockReduction: () => {
+        // This function should only run once per day and be manually triggered
+        // It should not run automatically on app load or refresh
+        const today = new Date().toISOString().split('T')[0]
+        const state = get()
+        
+        // Check if we've already processed today's stock reduction
+        const lastProcessedDate = localStorage.getItem('lastStockReductionDate')
+        if (lastProcessedDate === today) {
+          // Already processed today, don't run again
+          return
+        }
+        
+        state.medications.forEach(medication => {
+          if (medication.isActive) {
+            const takenToday = state.dailyMedicationTaken.find(
+              record => record.medicationId === medication.id && record.date === today
+            )
+            
+            // Only reduce stock if medication wasn't taken at all today
+            // This should be a manual process, not automatic
+            if (!takenToday) {
+              get().updateMedication(medication.id, {
+                currentQuantity: Math.max(0, medication.currentQuantity - medication.frequency)
+              })
+            }
+          }
         })
-      }
-    }
-  })
-  
-  // Mark today as processed
-  localStorage.setItem('lastStockReductionDate', today)
-},
+        
+        // Mark today as processed
+        localStorage.setItem('lastStockReductionDate', today)
+      },
     }),
     {
       name: 'prescription-manager-storage',

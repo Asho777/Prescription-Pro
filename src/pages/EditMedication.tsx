@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMedicationStore } from '../store/medicationStore'
 import { MedicationForm } from '../types'
-import { ArrowLeft, Save, Edit3, Check, X, Calculator } from 'lucide-react'
+import { ArrowLeft, Save, Edit3, Check, X, Calculator, Calendar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { format } from 'date-fns'
 
@@ -26,6 +26,7 @@ const medicationSchema = z.object({
   currentQuantity: z.number().min(0, 'Current quantity cannot be negative'),
   cost: z.number().min(0, 'Cost cannot be negative'),
   totalDispensingsPurchased: z.number().min(0, 'Total dispensings purchased cannot be negative'),
+  purchaseDate: z.string().min(1, 'Purchase date is required'), // New field
   isActive: z.boolean(),
   notes: z.string().optional(),
   yearlyTotalCost: z.number().min(0, 'Yearly total cost cannot be negative').default(0),
@@ -82,7 +83,7 @@ const commonTimings = [
 export function EditMedication() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
-  const { getMedication, updateMedication, doctors, pharmacies } = useMedicationStore()
+  const { getMedication, updateMedication, addPurchaseHistory, doctors, pharmacies } = useMedicationStore()
   const [selectedTimings, setSelectedTimings] = useState<string[]>([])
   const [baseYearlyTotal, setBaseYearlyTotal] = useState<number>(0)
   
@@ -107,6 +108,7 @@ export function EditMedication() {
   const totalRepeats = watch('totalRepeats')
   const totalDispensingsPurchased = watch('totalDispensingsPurchased')
   const cost = watch('cost')
+  const purchaseDate = watch('purchaseDate')
 
   // Calculate derived values
   const totalNumberOfDispensings = (totalRepeats || 0) + 1
@@ -125,6 +127,7 @@ export function EditMedication() {
         ...medication,
         prescriptionDate: format(new Date(medication.prescriptionDate), 'yyyy-MM-dd'),
         expiryDate: format(new Date(medication.expiryDate), 'yyyy-MM-dd'),
+        purchaseDate: format(new Date(), 'yyyy-MM-dd'), // Default to today's date
         yearlyTotalCost: medication.yearlyTotalCost || 0,
         lastYearlyResetDate: medication.lastYearlyResetDate || new Date().toISOString(),
         cost: 0, // Always start with cost at 0
@@ -187,6 +190,15 @@ export function EditMedication() {
       const finalYearlyTotal = useManualYearlyTotal 
         ? parseFloat(manualYearlyTotal) || 0
         : calculatedYearlyTotal
+
+      // Add purchase history if there's an amount to record
+      if (totalAmountForPurchase > 0 && data.purchaseDate) {
+        addPurchaseHistory({
+          medicationId: id,
+          amount: totalAmountForPurchase,
+          purchaseDate: data.purchaseDate,
+        })
+      }
 
       updateMedication(id, {
         ...data,
@@ -511,13 +523,34 @@ export function EditMedication() {
               <label className="label">Total Amount For This Purchase</label>
               <input
                 type="text"
-                value={`$${totalAmountForPurchase.toFixed(2)}`}
+                value={`${totalAmountForPurchase.toFixed(2)}`}
                 className="input-field bg-gray-100"
                 disabled
                 readOnly
               />
               <p className="mt-1 text-sm text-gray-500">
                 Automatically calculated: Total Dispensings Purchased × Cost per Fill
+              </p>
+            </div>
+
+            {/* NEW: Purchase Date Field */}
+            <div className="sm:col-span-2">
+              <label className="label">Medication Purchase Date *</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Calendar className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="date"
+                  {...register('purchaseDate')}
+                  className="input-field pl-10"
+                />
+              </div>
+              {errors.purchaseDate && (
+                <p className="mt-1 text-sm text-red-600">{errors.purchaseDate.message}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                This date will be used to track your monthly spending on the Reports chart.
               </p>
             </div>
 
@@ -580,7 +613,7 @@ export function EditMedication() {
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
-                      value={`$${displayYearlyTotal.toFixed(2)}`}
+                      value={`${displayYearlyTotal.toFixed(2)}`}
                       className={`input-field flex-1 ${useManualYearlyTotal ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'}`}
                       disabled
                       readOnly

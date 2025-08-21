@@ -2,7 +2,7 @@ import { useMedicationStore } from '../store/medicationStore'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from 'recharts'
 import { Download, Calendar, DollarSign, TrendingUp, Activity, HelpCircle } from 'lucide-react'
-import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from 'date-fns'
+import { format } from 'date-fns'
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
 
@@ -22,34 +22,30 @@ const getCurrentYearlyTotal = (medication: any) => {
 }
 
 export function Reports() {
-  const { medications, financialRecords, logs } = useMedicationStore()
+  const { medications, financialRecords, logs, purchaseHistory } = useMedicationStore()
 
-  // Calculate monthly spending data based on prescription dates and Total Amount For This Purchase
-  const last6Months = eachMonthOfInterval({
-    start: subMonths(new Date(), 5),
-    end: new Date()
-  })
+  // Create monthly spending data based on purchase history for the current year
+  const currentYear = new Date().getFullYear()
+  
+  // Initialize all 12 months with 0 spending
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const monthlySpending = monthNames.map((month, index) => ({
+    month: month,
+    monthIndex: index,
+    spending: 0
+  }))
 
-  const monthlySpending = last6Months.map(month => {
-    const monthStart = startOfMonth(month)
-    const monthEnd = endOfMonth(month)
-    
-    // Calculate spending based on medications prescribed in this month
-    const spending = medications
-      .filter(med => {
-        const prescriptionDate = new Date(med.prescriptionDate)
-        return prescriptionDate >= monthStart && prescriptionDate <= monthEnd
-      })
-      .reduce((sum, med) => {
-        const totalAmountForPurchase = med.totalDispensingsPurchased * med.cost
-        return sum + totalAmountForPurchase
-      }, 0)
-
-    return {
-      month: format(month, 'MMM yyyy'),
-      spending: spending
-    }
-  })
+  // Aggregate spending by month from purchase history for current year
+  purchaseHistory
+    .filter(purchase => {
+      const purchaseDate = new Date(purchase.purchaseDate)
+      return purchaseDate.getFullYear() === currentYear
+    })
+    .forEach(purchase => {
+      const purchaseDate = new Date(purchase.purchaseDate)
+      const monthIndex = purchaseDate.getMonth()
+      monthlySpending[monthIndex].spending += purchase.amount
+    })
 
   // Calculate medication adherence data
   const adherenceData = medications
@@ -75,12 +71,14 @@ export function Reports() {
   // Calculate key metrics
   const totalMedications = medications.length
   const activeMedications = medications.filter(med => med.isActive).length
-  const currentYear = new Date().getFullYear()
   
-  // Calculate total yearly spending based on yearlyTotalCost for all medications
-  const totalYearlySpending = medications.reduce((sum, med) => {
-    return sum + getCurrentYearlyTotal(med)
-  }, 0)
+  // Calculate total yearly spending based on purchase history for current year
+  const totalYearlySpending = purchaseHistory
+    .filter(purchase => {
+      const purchaseDate = new Date(purchase.purchaseDate)
+      return purchaseDate.getFullYear() === currentYear
+    })
+    .reduce((sum, purchase) => sum + purchase.amount, 0)
 
   const averageAdherence = adherenceData.length > 0 
     ? Math.round(adherenceData.reduce((sum, med) => sum + med.adherence, 0) / adherenceData.length)
@@ -98,7 +96,8 @@ export function Reports() {
       medications,
       monthlySpending,
       adherenceData,
-      formDistribution
+      formDistribution,
+      purchaseHistory
     }
 
     const dataStr = JSON.stringify(reportData, null, 2)
@@ -136,13 +135,28 @@ export function Reports() {
     )
   }
 
+  // Custom tooltip for monthly spending chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-medium text-gray-900">{`${label} ${currentYear}`}</p>
+          <p className="text-blue-600">
+            {`Spending: $${payload[0].value.toFixed(2)}`}
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="page-title">Reports & Analytics</h1>
-          <p className="page-subtitle">Insights into your medication management and spending</p>
+          <p className="page-subtitle">Insights into your medication management and spending for {currentYear}</p>
         </div>
         <button
           onClick={exportReport}
@@ -206,26 +220,35 @@ export function Reports() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Monthly Spending Chart */}
+        {/* Monthly Spending Chart - UPDATED */}
         <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Monthly Spending Trend</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Monthly Spending Trend - {currentYear}
+          </h3>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlySpending}>
+              <BarChart data={monthlySpending} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`$${value}`, 'Spending']} />
-                <Line 
-                  type="monotone" 
-                  dataKey="spending" 
-                  stroke="#3b82f6" 
-                  strokeWidth={2}
-                  dot={{ fill: '#3b82f6' }}
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
                 />
-              </LineChart>
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => `$${value}`}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar 
+                  dataKey="spending" 
+                  fill="#3b82f6"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Shows medication purchases by month. Data is tracked from purchase dates entered when editing medications.
+          </p>
         </div>
 
         {/* Medication Adherence Chart */}
@@ -252,7 +275,7 @@ export function Reports() {
           </div>
         </div>
 
-        {/* Medication Form Distribution - UPDATED FOR MOBILE */}
+        {/* Medication Form Distribution */}
         <div className="card">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Medication Forms</h3>
           <div className="h-80">
@@ -261,8 +284,8 @@ export function Reports() {
                 <Pie
                   data={formDistribution}
                   cx="50%"
-                  cy="45%" // Moved up slightly to make room for legend below
-                  outerRadius={90} // Reduced size slightly for mobile
+                  cy="45%" 
+                  outerRadius={90} 
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -280,32 +303,46 @@ export function Reports() {
           </div>
         </div>
 
-        {/* Cost Breakdown - Updated to show yearly costs */}
+        {/* Cost Breakdown - Updated to show purchase history */}
         <div className="card">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Top Yearly Medication Costs</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Medication Purchases</h3>
           <div className="space-y-4">
-            {medications
-              .filter(med => getCurrentYearlyTotal(med) > 0)
-              .sort((a, b) => getCurrentYearlyTotal(b) - getCurrentYearlyTotal(a))
-              .slice(0, 20)
-              .map((med, index) => (
-                <Link
-                  key={med.id}
-                  to={`/medications/edit/${med.id}`}
-                  className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full mr-3`} style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <div>
-                      <p className="font-medium text-gray-900 hover:text-primary-600">{med.name}</p>
-                      <p className="text-sm text-gray-500">{med.dosage}</p>
+            {purchaseHistory
+              .filter(purchase => {
+                const purchaseDate = new Date(purchase.purchaseDate)
+                return purchaseDate.getFullYear() === currentYear
+              })
+              .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime())
+              .slice(0, 10)
+              .map((purchase, index) => {
+                const medication = medications.find(med => med.id === purchase.medicationId)
+                if (!medication) return null
+                
+                return (
+                  <Link
+                    key={purchase.id}
+                    to={`/medications/edit/${purchase.medicationId}`}
+                    className="flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <div className={`w-3 h-3 rounded-full mr-3`} style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                      <div>
+                        <p className="font-medium text-gray-900 hover:text-primary-600">{medication.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {format(new Date(purchase.purchaseDate), 'MMM d, yyyy')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <span className="font-medium text-gray-900">${getCurrentYearlyTotal(med).toFixed(2)}</span>
-                </Link>
-              ))}
-            {medications.filter(med => getCurrentYearlyTotal(med) > 0).length === 0 && (
-              <p className="text-gray-500 text-center py-4">No yearly cost data available</p>
+                    <span className="font-medium text-gray-900">${purchase.amount.toFixed(2)}</span>
+                  </Link>
+                )
+              })
+              .filter(Boolean)}
+            {purchaseHistory.filter(purchase => {
+              const purchaseDate = new Date(purchase.purchaseDate)
+              return purchaseDate.getFullYear() === currentYear
+            }).length === 0 && (
+              <p className="text-gray-500 text-center py-4">No purchase history for {currentYear}</p>
             )}
           </div>
         </div>
@@ -377,7 +414,15 @@ export function Reports() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">${getCurrentYearlyTotal(med).toFixed(2)}</div>
+                    <div className="text-sm text-gray-900">
+                      ${purchaseHistory
+                        .filter(purchase => {
+                          const purchaseDate = new Date(purchase.purchaseDate)
+                          return purchase.medicationId === med.id && purchaseDate.getFullYear() === currentYear
+                        })
+                        .reduce((sum, purchase) => sum + purchase.amount, 0)
+                        .toFixed(2)}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`status-badge ${med.isActive ? 'status-active' : 'bg-gray-100 text-gray-800'}`}>

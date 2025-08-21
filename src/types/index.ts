@@ -5,7 +5,7 @@ export interface Medication {
   form: MedicationForm
   frequency: number
   timings: string[]
-  instructions: string
+  instructions?: string
   doctorId: string
   pharmacyId: string
   prescriptionDate: Date
@@ -18,8 +18,18 @@ export interface Medication {
   totalDispensingsPurchased: number
   isActive: boolean
   notes?: string
+  yearlyTotalCost: number
+  lastYearlyResetDate?: string
   createdAt: Date
   updatedAt: Date
+}
+
+export interface PurchaseHistory {
+  id: string
+  medicationId: string
+  amount: number
+  purchaseDate: string // ISO date string
+  createdAt: Date
 }
 
 export interface Doctor {
