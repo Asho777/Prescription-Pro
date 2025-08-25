@@ -8,7 +8,8 @@ import {
   Pill,
   ChevronRight,
   Calendar,
-  Timer
+  Timer,
+  Package
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -28,13 +29,15 @@ interface WidgetProps {
   onMedicationClick?: (medicationId: string) => void
   onMarkAsTaken?: (medicationId: string, timing: string) => void
   onViewAll?: () => void
+  showStock?: boolean
 }
 
 export function HomeScreenWidget({ 
   size = 'medium', 
   onMedicationClick,
   onMarkAsTaken,
-  onViewAll 
+  onViewAll,
+  showStock = false
 }: WidgetProps) {
   const { 
     medications, 
@@ -95,6 +98,20 @@ export function HomeScreenWidget({
       console.error('Date formatting error:', error)
       return 'Invalid Date'
     }
+  }
+
+  // Calculate remaining days for a medication
+  const calculateRemainingDays = (medication: Medication) => {
+    if (!medication.currentQuantity || !medication.frequency) return 0
+    return Math.floor(medication.currentQuantity / medication.frequency)
+  }
+
+  // Get stock status color
+  const getStockStatusColor = (medication: Medication) => {
+    const remaining = medication.currentQuantity || 0
+    if (remaining <= 7) return 'text-red-600'
+    if (remaining <= 14) return 'text-yellow-600'
+    return 'text-green-600'
   }
 
   // Calculate today's medications with timing status
@@ -245,6 +262,29 @@ export function HomeScreenWidget({
               </span>
             </div>
             <p className="text-sm text-gray-600">{nextMed.medication.dosage || 'No dosage info'}</p>
+            
+            {/* Stock Information */}
+            {showStock && (
+              <div className="flex items-center text-sm">
+                <Package className="h-4 w-4 mr-1" />
+                <span className={`font-medium ${getStockStatusColor(nextMed.medication)}`}>
+                  {nextMed.medication.currentQuantity || 0} left
+                </span>
+                <span className="text-gray-400 ml-2">
+                  ({calculateRemainingDays(nextMed.medication)} days)
+                </span>
+              </div>
+            )}
+            
+            {/* Low stock warning */}
+            {showStock && (nextMed.medication.currentQuantity || 0) <= 7 && (
+              <div className="p-2 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-xs text-red-700">
+                  ⚠️ Low stock! Consider refilling soon.
+                </p>
+              </div>
+            )}
+
             <button
               onClick={() => handleToggleMedication(nextMed.medication.id, nextMed.timing.time, nextMed.timing.taken)}
               className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2 text-base"
@@ -303,6 +343,20 @@ export function HomeScreenWidget({
             <div key={medData.medication.id} className="flex items-center justify-between">
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-900 truncate">{medData.medication.name || 'Unknown Medication'}</p>
+                
+                {/* Stock Information */}
+                {showStock && (
+                  <div className="flex items-center text-xs mt-1 mb-1">
+                    <Package className="h-3 w-3 mr-1" />
+                    <span className={`font-medium ${getStockStatusColor(medData.medication)}`}>
+                      {medData.medication.currentQuantity || 0} left
+                    </span>
+                    <span className="text-gray-400 ml-1">
+                      ({calculateRemainingDays(medData.medication)} days)
+                    </span>
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {medData.timings.map((timing) => (
                     <button
@@ -392,6 +446,25 @@ export function HomeScreenWidget({
               <h4 className="font-medium text-gray-900">{medData.medication.name || 'Unknown Medication'}</h4>
               <span className="text-xs text-gray-500">{medData.medication.dosage || 'No dosage'}</span>
             </div>
+            
+            {/* Stock Information */}
+            {showStock && (
+              <div className="flex items-center text-sm mb-2">
+                <Package className="h-4 w-4 mr-1" />
+                <span className={`font-medium ${getStockStatusColor(medData.medication)}`}>
+                  {medData.medication.currentQuantity || 0} left
+                </span>
+                <span className="text-gray-400 ml-2">
+                  ({calculateRemainingDays(medData.medication)} days)
+                </span>
+                {(medData.medication.currentQuantity || 0) <= 7 && (
+                  <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                    Low Stock
+                  </span>
+                )}
+              </div>
+            )}
+            
             <div className="flex items-center gap-2 flex-wrap">
               {medData.timings.map((timing) => (
                 <button

@@ -15,6 +15,7 @@ import { Settings } from './pages/Settings'
 import { Doctors } from './pages/Doctors'
 import { Pharmacies } from './pages/Pharmacies'
 import { WidgetDemo } from './pages/WidgetDemo'
+import { UserGuide } from './pages/UserGuide'
 
 function App() {
   const { isAuthenticated } = useUserStore()
@@ -57,6 +58,7 @@ useEffect(() => {
         <Route path="/pharmacies" element={<Pharmacies />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/widget-demo" element={<WidgetDemo />} />
+				<Route path="/user-guide" element={<UserGuide />} />
       </Routes>
     </Layout>
   )
