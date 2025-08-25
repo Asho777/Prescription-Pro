@@ -1,15 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { HomeScreenWidget } from '../components/HomeScreenWidget'
+import { useUserStore } from '../store/userStore'
 import { BookOpen } from 'lucide-react'
 
 export function Home() {
   const navigate = useNavigate()
+  const { user } = useUserStore()
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900">Welcome Back!</h1>
+        {user && (
+          <p className="mt-1 text-2xl font-medium text-gray-900">
+            {user.firstName} {user.lastName}
+          </p>
+        )}
         <p className="mt-2 text-lg text-gray-600">Here are your medications for today</p>
       </div>
 
