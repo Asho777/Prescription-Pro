@@ -9,7 +9,6 @@ export function AuthContainer() {
     // Force light mode for auth pages
     document.body.classList.remove('dark')
   }, [])
-
   return isLogin ? (
     <Login onSwitchToRegister={() => setIsLogin(false)} />
   ) : (
